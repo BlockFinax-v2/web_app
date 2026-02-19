@@ -25,15 +25,15 @@ export default function ExporterDashboard() {
   const { wallet } = useWallet();
 
   // Fetch exporter-specific data
-  const { data: exportContracts } = useQuery({
+  const { data: exportContracts = [] } = useQuery<any[]>({
     queryKey: ['/api/escrow/contracts', wallet?.address, 'exporter']
   });
 
-  const { data: shipments } = useQuery({
+  const { data: shipments = [] } = useQuery<any[]>({
     queryKey: ['/api/exports/shipments', wallet?.address]
   });
 
-  const { data: financeStats } = useQuery({
+  const { data: financeStats = {} as any } = useQuery<any>({
     queryKey: ['/api/finance/exporter-stats', wallet?.address]
   });
 
@@ -144,7 +144,7 @@ export default function ExporterDashboard() {
                           </div>
                           <Badge variant={
                             contract.status === 'active' ? 'default' :
-                            contract.status === 'completed' ? 'success' :
+                            contract.status === 'completed' ? 'default' :
                             'secondary'
                           }>
                             {contract.status}
@@ -206,7 +206,7 @@ export default function ExporterDashboard() {
                             </p>
                           </div>
                           <Badge variant={
-                            shipment.status === 'delivered' ? 'success' :
+                            shipment.status === 'delivered' ? 'default' :
                             shipment.status === 'in_transit' ? 'default' :
                             'secondary'
                           }>

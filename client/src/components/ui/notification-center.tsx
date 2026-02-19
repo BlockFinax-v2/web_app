@@ -30,13 +30,13 @@ export function NotificationCenter({ walletAddress }: NotificationCenterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications', walletAddress],
     enabled: !!walletAddress,
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  const { data: unreadNotifications = [] } = useQuery({
+  const { data: unreadNotifications = [] } = useQuery<Notification[]>({
     queryKey: ['/api/notifications', walletAddress, 'unread'],
     enabled: !!walletAddress,
     refetchInterval: 30000

@@ -25,15 +25,15 @@ export default function ImporterDashboard() {
   const { wallet } = useWallet();
 
   // Fetch importer-specific data
-  const { data: importContracts } = useQuery({
+  const { data: importContracts = [] } = useQuery<any[]>({
     queryKey: ['/api/escrow/contracts', wallet?.address, 'importer']
   });
 
-  const { data: suppliers } = useQuery({
+  const { data: suppliers = [] } = useQuery<any[]>({
     queryKey: ['/api/imports/suppliers', wallet?.address]
   });
 
-  const { data: orders } = useQuery({
+  const { data: orders = [] } = useQuery<any[]>({
     queryKey: ['/api/imports/orders', wallet?.address]
   });
 

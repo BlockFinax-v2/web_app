@@ -53,7 +53,7 @@ export async function fetchAllRates(): Promise<Record<string, FXRate>> {
     return cache.rates;
   }
 
-  const bases = [...new Set(Object.values(SUPPORTED_PAIRS).map(p => p.base))];
+  const bases = Array.from(new Set(Object.values(SUPPORTED_PAIRS).map(p => p.base)));
   const allRates: Record<string, Record<string, number>> = {};
 
   await Promise.all(bases.map(async (base) => {

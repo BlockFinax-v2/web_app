@@ -26,8 +26,13 @@ const defaultNetworks = [
  * Creates essential blockchain network entries if they don't exist
  */
 export async function initializeDatabase() {
+  if (!db) {
+    console.log("Skipping database initialization: No database connection.");
+    return;
+  }
+
   console.log("Initializing database with default networks...");
-  
+
   for (const network of defaultNetworks) {
     try {
       // Check if network already exists
@@ -36,7 +41,7 @@ export async function initializeDatabase() {
         .from(networks)
         .where(eq(networks.chainId, network.chainId))
         .limit(1);
-      
+
       if (existing.length === 0) {
         await db.insert(networks).values(network);
         console.log(`Added network: ${network.name}`);
@@ -47,6 +52,6 @@ export async function initializeDatabase() {
       console.error(`Failed to add network ${network.name}:`, error);
     }
   }
-  
+
   console.log("Database initialization completed");
 }

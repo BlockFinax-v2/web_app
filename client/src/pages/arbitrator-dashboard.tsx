@@ -25,15 +25,15 @@ export default function ArbitratorDashboard() {
   const { wallet } = useWallet();
 
   // Fetch arbitrator-specific data
-  const { data: disputes } = useQuery({
+  const { data: disputes = [] } = useQuery<any[]>({
     queryKey: ['/api/arbitration/disputes', wallet?.address]
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats = {} as any } = useQuery<any>({
     queryKey: ['/api/arbitration/stats', wallet?.address]
   });
 
-  const { data: earnings } = useQuery({
+  const { data: earnings = {} as any } = useQuery<any>({
     queryKey: ['/api/arbitration/earnings', wallet?.address]
   });
 

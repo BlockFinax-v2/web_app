@@ -25,19 +25,19 @@ export default function FinancierDashboard() {
   const { wallet } = useWallet();
 
   // Fetch financier-specific data
-  const { data: fundingPools } = useQuery({
+  const { data: fundingPools = [] } = useQuery<any[]>({
     queryKey: ['/api/finance/pools', wallet?.address]
   });
 
-  const { data: investments } = useQuery({
+  const { data: investments = [] } = useQuery<any[]>({
     queryKey: ['/api/finance/investments', wallet?.address]
   });
 
-  const { data: opportunities } = useQuery({
+  const { data: opportunities = [] } = useQuery<any[]>({
     queryKey: ['/api/finance/opportunities', wallet?.address]
   });
 
-  const { data: performance } = useQuery({
+  const { data: performance = {} as any } = useQuery<any>({
     queryKey: ['/api/finance/performance', wallet?.address]
   });
 
