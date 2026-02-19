@@ -3,56 +3,87 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 20% 98%;
-  --foreground: 213 50% 15%;
-  --muted: 210 20% 95%;
-  --muted-foreground: 213 20% 45%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 213 50% 15%;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
   --card: 0 0% 100%;
-  --card-foreground: 213 50% 15%;
-  --border: 213 20% 88%;
-  --input: 213 20% 88%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 213 50% 20%;
-  --secondary-foreground: 0 0% 100%;
-  --accent: 213 50% 20%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --ring: 217 91% 60%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+
   --radius: 0.5rem;
-  --success: 160 84% 39%;
-  --warning: 43 96% 56%;
-  --error: 0 72% 51%;
-  --navy: 213 50% 24%;
+
+  /* Brand-specific - Light Mode */
+  --brand-deep: 220 30% 96%;
+  /* Very light blue/grey */
+  --brand-dark: 220 20% 90%;
+  --brand-primary: 221 83% 53%;
+  /* Royal Blue */
+  --brand-light: 199 89% 48%;
+  --brand-neon: 221 83% 53%;
+  /* Same as primary in light mode for readability */
 }
 
 .dark {
-  --background: 213 50% 8%;
-  --foreground: 210 20% 95%;
-  --muted: 213 40% 12%;
-  --muted-foreground: 213 20% 60%;
-  --popover: 213 50% 10%;
-  --popover-foreground: 210 20% 95%;
-  --card: 213 50% 10%;
-  --card-foreground: 210 20% 95%;
-  --border: 213 30% 20%;
-  --input: 213 30% 20%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 213 50% 25%;
-  --secondary-foreground: 0 0% 100%;
-  --accent: 213 50% 25%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 62% 40%;
-  --destructive-foreground: 0 0% 100%;
-  --ring: 217 91% 60%;
-  --success: 160 84% 39%;
-  --warning: 43 96% 56%;
-  --error: 0 72% 51%;
-  --navy: 213 50% 20%;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 48%;
+
+  /* Brand-specific - Dark Mode */
+  --brand-deep: 237 50% 8%;
+  /* #0a0b1e */
+  --brand-dark: 237 34% 12%;
+  /* #141529 */
+  --brand-primary: 217 91% 60%;
+  /* #3b82f6 */
+  --brand-light: 213 94% 68%;
+  /* #60a5fa */
+  --brand-neon: 184 100% 50%;
+  /* #00f0ff */
 }
 
 @layer base {
@@ -66,9 +97,19 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "cv11", "ss01";
+    overflow-x: hidden;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 600;
     letter-spacing: -0.02em;
   }
@@ -78,57 +119,57 @@
   .wallet-gradient {
     background: linear-gradient(135deg, hsl(213 50% 24%) 0%, hsl(217 91% 60%) 100%);
   }
-  
+
   .brand-gradient {
     background: linear-gradient(135deg, hsl(213 50% 20%) 0%, hsl(217 91% 55%) 100%);
   }
-  
+
   .card-elevated {
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
     border: 1px solid hsl(var(--border));
   }
-  
+
   .card-elevated:hover {
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   }
-  
+
   .btn-primary-gradient {
     background: linear-gradient(135deg, hsl(213 50% 24%) 0%, hsl(217 91% 60%) 100%);
     color: white;
     font-weight: 500;
     transition: all 0.2s ease;
   }
-  
+
   .btn-primary-gradient:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
   }
-  
+
   .btn-navy {
     background: hsl(213 50% 24%);
     color: white;
   }
-  
+
   .btn-navy:hover {
     background: hsl(213 50% 30%);
   }
-  
+
   .stat-card {
     @apply p-4 rounded-lg border border-border/50 bg-card;
   }
-  
+
   .stat-value {
     @apply text-2xl font-semibold tracking-tight;
   }
-  
+
   .stat-label {
     @apply text-sm text-muted-foreground;
   }
-  
+
   .token-icon {
     @apply w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium;
   }
-  
+
   .section-header {
     @apply text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4;
   }
@@ -138,22 +179,23 @@
   .animate-in {
     animation: animateIn 0.2s ease-out;
   }
-  
+
   @keyframes animateIn {
     from {
       opacity: 0;
       transform: translateY(4px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
+
   .transition-smooth {
     transition: all 0.2s ease;
   }
-  
+
   .hover-lift:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
@@ -171,7 +213,7 @@
     border-radius: 0;
     border: none;
   }
-  
+
   /* Ensure input area stays visible */
   .mobile-input-container {
     position: sticky;
@@ -183,19 +225,20 @@
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
     min-height: 80px;
   }
-  
+
   /* Ensure input is visible on small screens */
   .mobile-input-container .flex {
     min-height: 48px;
   }
-  
+
   /* Mobile input field styling */
   .mobile-input-container input {
-    font-size: 16px !important; /* Prevents zoom on iOS */
+    font-size: 16px !important;
+    /* Prevents zoom on iOS */
     -webkit-appearance: none;
     appearance: none;
   }
-  
+
   /* Better mobile keyboard handling */
   body.keyboard-open {
     position: fixed;
@@ -203,42 +246,43 @@
     height: 100vh;
     overflow: hidden;
   }
-  
+
   /* Chat messages area should be scrollable */
   .mobile-messages-area {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 80px; /* Extra space for input */
+    padding-bottom: 80px;
+    /* Extra space for input */
   }
-  
+
   /* Ensure message status icons are visible on mobile */
   .message-status-icon {
     min-width: 12px;
     min-height: 12px;
     flex-shrink: 0;
   }
-  
+
   /* Better contrast for message delivery status on mobile */
   .mobile-delivery-status {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 2px;
     padding: 1px 2px;
   }
-  
+
   /* Enhanced message readability on mobile */
   .message-bubble {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
-  
+
   /* Better text contrast and spacing */
   .message-content {
     line-height: 1.5;
     word-wrap: break-word;
     hyphens: auto;
   }
-  
+
   /* Improved message spacing on mobile */
   .mobile-message-spacing {
     margin-bottom: 12px;
