@@ -102,7 +102,8 @@ export default function Wallet() {
   };
 
   return (
-    <div className="h-full flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-6">
+    <div className="h-full flex flex-col items-center bg-muted/10 overflow-y-auto w-full">
+      <div className="w-full max-w-md p-4 sm:p-6 space-y-6 pb-24">
       
       <EnhancedWalletOverview 
         address={wallet?.address || ""}
@@ -190,6 +191,8 @@ export default function Wallet() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      </div>
     </div>
   );
 }
