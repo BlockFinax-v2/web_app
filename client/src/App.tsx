@@ -23,6 +23,7 @@ import Wallet from "@/pages/wallet";
 import CreateWallet from "@/pages/create-wallet";
 import ImportWallet from "@/pages/import-wallet";
 import UnlockWallet from "@/pages/unlock-wallet";
+import Login from "@/pages/login";
 
 // Role dashboards
 import RoleSelection from "@/pages/role-selection";
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/create-wallet" component={CreateWallet} />
       <Route path="/import-wallet" component={ImportWallet} />
       <Route path="/unlock-wallet" component={UnlockWallet} />
+      <Route path="/login" component={Login} />
 
       {/* Role dashboards */}
       <Route path="/role-selection" component={RoleSelection} />

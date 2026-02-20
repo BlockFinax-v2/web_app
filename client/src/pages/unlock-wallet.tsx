@@ -1,169 +1,192 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Link, useLocation } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useWallet } from '@/hooks/use-wallet';
+import { useTheme } from '@/components/ui/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useWallet } from '@/hooks/use-wallet';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
-import logoPath from "@/assets/logo.png";
+import {
+  Loader2,
+  Eye, EyeOff,
+  ShieldCheck,
+  Blocks,
+  Fingerprint,
+  Trash2,
+  ChevronRight,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
+import { AuthLayout } from '@/components/auth-layout';
 
-const unlockSchema = z.object({
-  password: z.string().min(1, 'Password is required'),
-});
 
-type UnlockFormData = z.infer<typeof unlockSchema>;
+function truncate(addr: string, chars = 6): string {
+  return addr ? `${addr.slice(0, chars + 2)}...${addr.slice(-4)}` : '';
+}
 
 export default function UnlockWallet() {
   const [, setLocation] = useLocation();
-  const { unlockWallet, isLoading, deleteWallet } = useWallet();
-  
+  const { unlockWallet, deleteWallet, isLoading, address, smartAccountAddress, isSmartAccountEnabled, walletName } = useWallet();
+
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isAnimatingIn] = useState(true);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setError,
-  } = useForm<UnlockFormData>({
-    resolver: zodResolver(unlockSchema),
-  });
-
-  const onSubmit = async (data: UnlockFormData) => {
+  const handleUnlock = async () => {
+    if (!password.trim()) {
+      setError('Password is required');
+      return;
+    }
+    setError('');
     try {
-      const wallet = await unlockWallet(data.password);
-      if (wallet) {
-        window.location.replace('/wallet');
-      }
-    } catch (error) {
-      setError('password', {
-        type: 'manual',
-        message: 'Invalid password. Please try again.',
-      });
+      await unlockWallet(password);
+      setLocation('/wallet');
+    } catch (err: any) {
+      setError(err.message || 'Invalid password. Please try again.');
     }
   };
 
-  const handleDeleteWallet = () => {
+  const handleDelete = () => {
     deleteWallet();
-    setLocation('/');
+    setLocation('/create-wallet');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <img 
-                src={logoPath} 
-                alt="BlockFinaX Logo" 
-                className="w-8 h-8 object-contain"
-              />
-              <span>Unlock Wallet</span>
+    <AuthLayout>
+      <div className="flex-1 flex items-center justify-center p-4 min-h-0 py-8">
+        <div
+          className={[
+            'w-full max-w-sm',
+            isAnimatingIn ? 'animate-in fade-in slide-in-from-bottom-4 duration-500' : '',
+          ].join(' ')}
+        >
+        {/* Solid card no gradient behind it */}
+        <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-xl space-y-5">
+          {/* Top bar */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Blocks className="w-5 h-5 text-primary" />
+              <span className="text-sm font-bold text-foreground tracking-tight">BlockFinaX</span>
             </div>
-          </CardTitle>
-          <p className="text-muted-foreground">
-            Enter your password to access your BlockFinaX wallet
-          </p>
-        </CardHeader>
-        
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  {...register('password')}
-                  className={errors.password ? 'border-destructive' : ''}
-                  autoFocus
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+            {/* AA badge */}
+            {isSmartAccountEnabled && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold uppercase tracking-wider">
+                <Wifi className="w-2.5 h-2.5" />
+                Smart Account
+              </span>
+            )}
+          </div>
+
+          {/* Icon + title */}
+          <div className="flex flex-col items-center text-center space-y-2">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Fingerprint className="w-7 h-7 text-primary" />
               </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+              {/* Pulse ring */}
+              <div className="absolute inset-0 rounded-2xl border border-primary/20 animate-ping opacity-30" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-foreground">Unlock Wallet</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">Enter your password to access</p>
+            </div>
+          </div>
+
+          {/* Wallet info */}
+          {address && (
+            <div className="bg-muted/40 rounded-xl p-3 space-y-2 border border-border/50">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Wallet</span>
+                <span className="text-xs font-semibold text-foreground">{walletName}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">EOA</span>
+                <span className="font-mono text-[10px] text-foreground">{truncate(address)}</span>
+              </div>
+              {smartAccountAddress && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Smart Account</span>
+                  <span className="font-mono text-[10px] text-primary">{truncate(smartAccountAddress)}</span>
+                </div>
               )}
             </div>
+          )}
 
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Unlocking...
-                </>
-              ) : (
-                'Unlock Wallet'
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 space-y-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Don't have a wallet?{' '}
-                <Link href="/create-wallet" className="text-primary hover:underline">
-                  Create new wallet
-                </Link>
-                {' or '}
-                <Link href="/import-wallet" className="text-primary hover:underline">
-                  import existing
-                </Link>
+          {/* Password input */}
+          <div className="space-y-1.5">
+            <div className="relative">
+              <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                className="pl-10 pr-10 h-10 bg-muted/50 border-border/60 focus:border-primary/60 text-sm transition-all"
+                autoFocus
+                disabled={isLoading}
+                onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {error && (
+              <p className="text-[10px] text-destructive flex items-center gap-1.5 pl-1">
+                <WifiOff className="w-3 h-3" /> {error}
               </p>
-            </div>
+            )}
+          </div>
 
-            {/* Delete Wallet Section */}
-            <div className="pt-4 border-t border-border">
+          {/* Unlock button */}
+          <Button
+            onClick={handleUnlock}
+            disabled={isLoading || !password.trim()}
+            className="w-full h-10 font-semibold text-sm rounded-xl"
+          >
+            {isLoading ? (
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" />Unlocking...</>
+            ) : (
+              <><ChevronRight className="w-4 h-4 mr-1" />Unlock Wallet</>
+            )}
+          </Button>
+
+          {/* Links */}
+          <div className="text-center space-y-2 pt-1">
+            <p className="text-[10px] text-muted-foreground">
+              Don't have a wallet?{' '}
+              <Link href="/create-wallet">
+                <span className="text-primary hover:underline cursor-pointer font-medium">Create new</span>
+              </Link>
+              {' or '}
+              <Link href="/import-wallet">
+                <span className="text-primary hover:underline cursor-pointer font-medium">import</span>
+              </Link>
+            </p>
+
+            {/* Delete wallet */}
+            <div className="border-t border-border/50 pt-3">
               {!showDeleteConfirm ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1.5 mx-auto transition-colors"
                 >
+                  <Trash2 className="w-3 h-3" />
                   Delete Wallet
-                </Button>
+                </button>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-sm text-center text-muted-foreground">
-                    Are you sure? This action cannot be undone.
+                  <p className="text-xs text-center text-muted-foreground">
+                    This will permanently remove your wallet.
                   </p>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="flex-1"
-                    >
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)} className="flex-1 h-8 text-xs">
                       Cancel
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDeleteWallet}
-                      className="flex-1"
-                    >
+                    <Button variant="destructive" size="sm" onClick={handleDelete} className="flex-1 h-8 text-xs">
                       Delete
                     </Button>
                   </div>
@@ -171,8 +194,9 @@ export default function UnlockWallet() {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+        </div>
+      </div>
+    </AuthLayout>
   );
 }
