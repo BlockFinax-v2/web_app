@@ -9,6 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { NetworkSelector } from '@/components/wallet/network-selector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionHistory } from '@/components/wallet/transaction-history';
+import { SendTransactionModal } from '@/components/wallet/send-transaction-modal';
+
+// Basic ERC-20 ABI for balance checking
+const ERC20_ABI = [
+  "function balanceOf(address account) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)"
+];
 
 interface Props {
   address: string;
@@ -21,12 +29,14 @@ interface Props {
 
 export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
   const [balanceETH, setBalanceETH] = useState<string>("0.00");
+  const [usdcBalance, setUSDCBalance] = useState<string>("0.00");
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    async function fetchBalance() {
+    async function fetchBalances() {
       if (!address) return;
       try {
         setLoading(true);
@@ -35,18 +45,34 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
         
         if (network && network.rpcUrl) {
           const provider = new ethers.JsonRpcProvider(network.rpcUrl);
+          
+          // Fetch Native Balance
           const balanceWei = await provider.getBalance(address);
-          const balStr = ethers.formatEther(balanceWei);
-          // Round to 4 decimal places
-          if (isMounted) setBalanceETH(parseFloat(balStr).toFixed(4));
+          if (isMounted) setBalanceETH(parseFloat(ethers.formatEther(balanceWei)).toFixed(4));
+
+          // Fetch USDC Balance (if known, trying Base Sepolia USDC first, or general)
+          // Look up USDC address in config 
+          // Note: Hardcoded for demo if not using full alchemyAccount config export
+          const usdcAddress = networkId === 84532 ? "0x036CbD53842c5426634e7929541eC2318f3dCF7e" : 
+                            networkId === 4202 ? "0x17b3531549F842552911CB287CCf7a5F328ff7d1" : 
+                            networkId === 11155111 ? "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238" : null;
+
+          if (usdcAddress) {
+              const contract = new ethers.Contract(usdcAddress, ERC20_ABI, provider);
+              const bal = await contract.balanceOf(address);
+              const dec = await contract.decimals();
+              if (isMounted) setUSDCBalance(parseFloat(ethers.formatUnits(bal, dec)).toFixed(2));
+          } else {
+              if (isMounted) setUSDCBalance("0.00");
+          }
         }
       } catch (err) {
-        console.error("Failed to fetch balance", err);
+        console.error("Failed to fetch balances", err);
       } finally {
         if (isMounted) setLoading(false);
       }
     }
-    fetchBalance();
+    fetchBalances();
     return () => { isMounted = false; };
   }, [address, networkId]);
 
@@ -58,13 +84,15 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
     });
   };
 
+  const currentNetwork = Object.values(NETWORK_CONFIGS).find(n => n.chainId === networkId);
+  const nativeSymbol = currentNetwork?.nativeCurrency?.symbol || 'ETH';
+
   const ASSETS = [
-    { symbol: 'ETH', name: 'Ethereum', balance: balanceETH, usdValue: '$0.00', change: '+0.0%', positive: true, isReal: true },
-    { symbol: 'USDC', name: 'USD Coin', balance: '12,450.00', usdValue: '$12,450.00', change: '+2.3%', positive: true, isReal: false },
-    { symbol: 'BTC', name: 'Bitcoin', balance: '0.2841', usdValue: '$18,912.50', change: '-0.8%', positive: false, isReal: false },
+    { symbol: nativeSymbol, name: currentNetwork?.name || 'Ethereum', balance: balanceETH, usdValue: '$0.00', change: '+0.0%', positive: true, isReal: true },
+    { symbol: 'USDC', name: 'USD Coin', balance: usdcBalance, usdValue: '$0.00', change: '+0.0%', positive: true, isReal: true },
   ];
 
-  const totalUsd = '$43,446.86';
+  const totalUsd = '$0.00';
 
   return (
     <div className="space-y-6">
@@ -90,7 +118,11 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
       {/* Action Buttons Row */}
       <div className="flex justify-center gap-6 px-4">
         <div className="flex flex-col items-center gap-2">
-          <Button size="icon" className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">
+          <Button 
+            onClick={() => setIsSendModalOpen(true)}
+            size="icon" 
+            className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20"
+          >
             <ArrowUpRight className="h-6 w-6" />
           </Button>
           <span className="text-xs font-medium">Send</span>
@@ -186,11 +218,6 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
             </div>
           </Card>
           
-          <div className="flex justify-center pt-2">
-            <button className="text-sm font-semibold text-primary hover:underline">
-               Import tokens
-            </button>
-          </div>
         </TabsContent>
 
         {/* Placeholders for other tabs */}
@@ -219,6 +246,14 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
         </TabsContent>
 
       </Tabs>
+
+      <SendTransactionModal 
+        isOpen={isSendModalOpen} 
+        onClose={() => setIsSendModalOpen(false)} 
+        networkId={networkId.toString()} 
+        address={address} 
+        assets={ASSETS}
+      />
     </div>
   );
 }
