@@ -74,13 +74,13 @@ function InstrumentCard({ flag, code, name, change, positive }: {
   flag: string; code: string; name: string; change: string; positive: boolean;
 }) {
   return (
-    <div className="flex-shrink-0 flex items-center gap-3 px-5 py-4 rounded-lg bg-[#141B2D] border border-white/5 min-w-[220px] cursor-pointer hover:bg-[#1a2236] transition-colors">
+    <div className="flex-shrink-0 flex items-center gap-3 px-5 py-4 rounded-lg bg-slate-100 dark:bg-[#141B2D] border border-border dark:border-white/5 min-w-[220px] cursor-pointer hover:bg-slate-200 dark:hover:bg-[#1a2236] transition-colors">
       <span className="text-2xl">{flag}</span>
       <div>
-        <p className="text-sm font-bold text-white">{code}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{name}</p>
+        <p className="text-sm font-bold text-foreground">{code}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{name}</p>
       </div>
-      <span className={`ml-auto text-xs font-medium ${positive ? "text-emerald-400" : "text-red-400"}`}>{change}</span>
+      <span className={`ml-auto text-xs font-medium ${positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>{change}</span>
     </div>
   );
 }
@@ -262,7 +262,7 @@ function ProtocolFlowAnimation() {
           {/* Inner ring */}
           <circle cx={n.x} cy={n.y} r="22" fill="none" stroke={n.color} strokeWidth="1.2" opacity="0.3" />
           {/* Node fill circle */}
-          <circle cx={n.x} cy={n.y} r="18" fill="#0D1321" stroke={n.color} strokeWidth="1.8" opacity="0.9" filter="url(#glow)" />
+          <circle cx={n.x} cy={n.y} r="18" fill="hsl(var(--background))" stroke={n.color} strokeWidth="1.8" opacity="0.9" filter="url(#glow)" />
           {/* Icon centered in node circle — scale(0.46) maps 24×24 → ~11×11 */}
           <g
             transform={`translate(${n.x}, ${n.y}) scale(0.46) translate(-12, -12)`}
@@ -275,12 +275,12 @@ function ProtocolFlowAnimation() {
             {nodeIconPaths[n.id]}
           </g>
           {/* Node title */}
-          <text x={n.x} y={n.y + 42} textAnchor="middle" fill="#cbd5e1"
+          <text x={n.x} y={n.y + 42} textAnchor="middle" fill="hsl(var(--foreground))"
             fontSize="10.5" fontFamily="-apple-system, sans-serif" fontWeight="600" opacity="0.9">
             {n.label}
           </text>
           {/* Node subtitle */}
-          <text x={n.x} y={n.y + 55} textAnchor="middle" fill="#64748b"
+          <text x={n.x} y={n.y + 55} textAnchor="middle" fill="hsl(var(--muted-foreground))"
             fontSize="9" fontFamily="-apple-system, sans-serif" opacity="0.75">
             {n.sub}
           </text>
@@ -424,7 +424,7 @@ export default function Website() {
           HERO — dark section
       ════════════════════════════════════ */}
       <section
-        className="bg-[#0D1321] pt-28 pb-20 relative overflow-hidden"
+        className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:bg-[#0D1321] dark:[background-image:none] pt-28 pb-20 relative overflow-hidden"
         onMouseMove={handleHeroMouseMove}
         onMouseLeave={handleHeroMouseLeave}
       >
@@ -447,24 +447,24 @@ export default function Website() {
 
           {/* Badge — no parallax, stays perfectly centered */}
           <Reveal>
-            <p className="text-sm text-slate-400 mb-5">
-              Trusted by over <strong className="text-white">1,200+ companies</strong> across 48 countries
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
+              Trusted by over <strong className="text-slate-800 dark:text-white">1,200+ companies</strong> across 48 countries
             </p>
           </Reveal>
 
           {/* Headline — Layer 1: strongest movement */}
           <Reveal delay={0.05}>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight tracking-tight mb-4">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight mb-4">
               Pay. Finance. Hedge.
             </h1>
-            <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-slate-300 leading-tight tracking-tight mb-8">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-slate-600 dark:text-slate-300 leading-tight tracking-tight mb-8">
               The Trade Finance Marketplace
             </h2>
           </Reveal>
 
           {/* Subtitle — Layer 2: medium movement */}
           <Reveal delay={0.1}>
-            <p className="text-lg text-slate-400 max-w-xl mx-auto mb-10">
+            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-10">
               Pay across borders, finance trade, and hedge against currency risk — all in one platform for emerging markets.
             </p>
           </Reveal>
@@ -478,7 +478,7 @@ export default function Website() {
                     Open a Free Account
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" onClick={() => scrollTo("how-it-works")} className="px-8 h-12 text-base border-white/20 text-white hover:bg-white/10 hover:text-white">
+                <Button size="lg" variant="outline" onClick={() => scrollTo("how-it-works")} className="px-8 h-12 text-base border-slate-300 dark:border-white/20 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white">
                   Watch Demo
                 </Button>
               </div>
@@ -487,9 +487,9 @@ export default function Website() {
         </div>
 
         {/* ── INFINITE MARQUEE TICKER ── */}
-        <div id="markets" className="mt-16 border-t border-white/5 pt-10">
-          <p className="text-center text-sm text-slate-500 mb-6 px-4">
-            Easy Access to <strong className="text-slate-300">50+ Trade Finance Instruments</strong>
+        <div id="markets" className="mt-16 border-t border-slate-200 dark:border-white/5 pt-10">
+          <p className="text-center text-sm text-slate-400 dark:text-slate-500 mb-6 px-4">
+            Easy Access to <strong className="text-slate-600 dark:text-slate-300">50+ Trade Finance Instruments</strong>
           </p>
 
           {/* Outer wrapper: clip overflow — no gradient mask, just hard clip */}
@@ -536,13 +536,13 @@ export default function Website() {
           STATS — dark rounded section
       ════════════════════════════════════ */}
       {/* ════ STATS — dark card on white ════ */}
-      <section className="bg-white dark:bg-background pt-0 pb-6">
+      <section className="bg-background pt-0 pb-6">
         <SectionIn className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="bg-[#0D1321] rounded-2xl px-10 py-14">
+          <div className="bg-blue-50 dark:bg-[#0D1321] rounded-2xl px-10 py-14 border border-blue-100 dark:border-transparent">
             <Reveal>
               <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-white">Our Results Are Proven in Numbers</h2>
-                <p className="text-slate-400 mt-3">The numbers that define how BlockFinaX is reshaping global trade finance.</p>
+                <h2 className="text-3xl md:text-4xl font-bold text-blue-900 dark:text-white">Our Results Are Proven in Numbers</h2>
+                <p className="text-blue-700/70 dark:text-slate-400 mt-3">The numbers that define how BlockFinaX is reshaping global trade finance.</p>
               </div>
             </Reveal>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -553,10 +553,10 @@ export default function Website() {
                 { end: 0, suffix: ".1%", prefix: "", label: "Protocol Fee" },
               ].map(({ end, suffix, prefix, label }) => (
                 <Reveal key={label}>
-                  <p className="text-4xl md:text-5xl font-bold text-white">
+                  <p className="text-4xl md:text-5xl font-bold text-blue-800 dark:text-white">
                     <Counter end={end} suffix={suffix} prefix={prefix} />
                   </p>
-                  <p className="mt-2 text-sm text-slate-400">{label}</p>
+                  <p className="mt-2 text-sm text-blue-600/70 dark:text-slate-400">{label}</p>
                 </Reveal>
               ))}
             </div>
@@ -568,7 +568,7 @@ export default function Website() {
           FEATURES — white section
       ════════════════════════════════════ */}
       {/* ════ FEATURES — white ════ */}
-      <section id="features" className="bg-white dark:bg-background py-24">
+      <section id="features" className="bg-background py-24">
         <SectionIn className="max-w-7xl mx-auto px-4 sm:px-6">
           <Reveal>
             <div className="text-center mb-14">
@@ -584,7 +584,7 @@ export default function Website() {
 
             {/* Large dark feature card (left) — with product screenshot */}
             <Reveal>
-              <div className="rounded-2xl bg-[#0D1321] h-full flex flex-col md:flex-row overflow-hidden min-h-[340px]">
+              <div className="rounded-2xl bg-blue-900 dark:bg-[#0D1321] h-full flex flex-col md:flex-row overflow-hidden min-h-[340px]">
                 {/* Text */}
                 <div className="p-8 flex flex-col justify-between flex-1 min-w-0">
                   <div>
@@ -609,7 +609,7 @@ export default function Website() {
                     style={{ minHeight: 220 }}
                   />
                   {/* Subtle overlay so the image blends with card bg on the left edge */}
-                  <div className="absolute inset-y-0 left-0 w-8 bg-[#0D1321]" style={{ maskImage: 'linear-gradient(to right, #0D1321, transparent)', WebkitMaskImage: 'linear-gradient(to right, #0D1321, transparent)' }} />
+                  <div className="absolute inset-y-0 left-0 w-8" style={{ background: 'rgb(30 58 138)', maskImage: 'linear-gradient(to right, rgb(30 58 138), transparent)', WebkitMaskImage: 'linear-gradient(to right, rgb(30 58 138), transparent)' }} />
                 </div>
               </div>
             </Reveal>
@@ -688,7 +688,7 @@ export default function Website() {
           HOW IT WORKS — alternating section
       ════════════════════════════════════ */}
       {/* ════ HOW IT WORKS — rounded top lifts from white ════ */}
-      <section id="how-it-works" className="bg-slate-50 dark:bg-slate-950 py-24 border-t border-border">
+      <section id="how-it-works" className="bg-muted/30 dark:bg-slate-950 py-24 border-t border-border">
         <SectionIn className="max-w-7xl mx-auto px-4 sm:px-6">
           <Reveal>
             <div className="text-center mb-16">
@@ -737,12 +737,12 @@ export default function Website() {
                 alt="Global shipping port — the trade BlockFinaX finances"
                 className="w-full h-72 object-cover"
               />
-              <div className="bg-[#0D1321] px-6 py-4 flex items-center gap-3">
+              <div className="bg-blue-900 dark:bg-[#0D1321] px-6 py-4 flex items-center gap-3">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="h-2 w-2 rounded-full bg-emerald-500 relative" />
                 </span>
-                <p className="text-slate-400 text-sm">BlockFinaX finances real-world trade flows across 48 countries. <span className="text-slate-300 font-medium">From container shipments to commodity imports.</span></p>
+                <p className="text-blue-200 dark:text-slate-400 text-sm">BlockFinaX finances real-world trade flows across 48 countries. <span className="text-white font-medium">From container shipments to commodity imports.</span></p>
               </div>
             </div>
           </Reveal>
@@ -753,7 +753,7 @@ export default function Website() {
           USE CASES — white section
       ════════════════════════════════════ */}
       {/* ════ USE CASES — white ════ */}
-      <section id="company" className="bg-white dark:bg-background py-24 border-t border-border">
+      <section id="company" className="bg-background py-24 border-t border-border">
         <SectionIn className="max-w-7xl mx-auto px-4 sm:px-6">
           <Reveal>
             <div className="text-center mb-14">
@@ -771,7 +771,7 @@ export default function Website() {
               { icon: Users, title: "Trade Finance Banks", desc: "Integrate BlockFinaX as a digitalisation layer. Offer clients faster, cheaper LC and financing services while retaining your relationship.", cta: "Partner with Us", dark: true },
             ].map(({ icon: Icon, title, desc, cta, dark }) => (
               <Reveal key={title}>
-                <div className={`rounded-2xl p-8 flex flex-col justify-between min-h-[220px] ${dark ? "bg-[#0D1321]" : "bg-slate-50 dark:bg-slate-900 border border-border"}`}>
+                <div className={`rounded-2xl p-8 flex flex-col justify-between min-h-[220px] ${dark ? "bg-blue-900 dark:bg-[#0D1321]" : "bg-slate-50 dark:bg-slate-900 border border-border"}`}>
                   <div className="flex items-start gap-5">
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${dark ? "bg-blue-600" : "bg-blue-100 dark:bg-blue-900/40"}`}>
                       <Icon className={`h-5 w-5 ${dark ? "text-white" : "text-blue-600"}`} />
@@ -795,12 +795,12 @@ export default function Website() {
           SECURITY — dark section
       ════════════════════════════════════ */}
       {/* ════ SECURITY — dark section, rounded top rises from white ════ */}
-      <section className="bg-[#0D1321] py-24 rounded-t-[2.5rem]">
+      <section className="bg-slate-50 dark:bg-[#0D1321] py-24 rounded-t-[2.5rem] border-t border-border dark:border-transparent">
         <SectionIn className="max-w-7xl mx-auto px-4 sm:px-6">
           <Reveal>
             <div className="text-center mb-14">
-              <h2 className="text-4xl font-bold text-white mb-3">Enterprise Security, By Design</h2>
-              <p className="text-slate-400 max-w-xl mx-auto">Funds are never held by BlockFinaX. Every transaction is transparently auditable on-chain.</p>
+              <h2 className="text-4xl font-bold text-foreground dark:text-white mb-3">Enterprise Security, By Design</h2>
+              <p className="text-muted-foreground dark:text-slate-400 max-w-xl mx-auto">Funds are never held by BlockFinaX. Every transaction is transparently auditable on-chain.</p>
             </div>
           </Reveal>
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
@@ -811,12 +811,12 @@ export default function Website() {
               { icon: Clock, title: "99.9% Uptime", desc: "Decentralized infrastructure with no single point of failure." },
             ].map(({ icon: Icon, title, desc }) => (
               <Reveal key={title}>
-                <div className="rounded-xl bg-[#141B2D] border border-white/5 p-6">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
-                    <Icon className="h-5 w-5 text-emerald-400" />
+                <div className="rounded-xl bg-white dark:bg-[#141B2D] border border-border dark:border-white/5 p-6 shadow-sm dark:shadow-none">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center mb-4">
+                    <Icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h4 className="font-semibold text-white mb-1.5">{title}</h4>
-                  <p className="text-sm text-slate-400 leading-relaxed">{desc}</p>
+                  <h4 className="font-semibold text-foreground dark:text-white mb-1.5">{title}</h4>
+                  <p className="text-sm text-muted-foreground dark:text-slate-400 leading-relaxed">{desc}</p>
                 </div>
               </Reveal>
             ))}
@@ -828,22 +828,22 @@ export default function Website() {
           LIVE ACTIVITY — dark section
       ════════════════════════════════════ */}
       {/* ════ LIVE ACTIVITY — darkest, seamless from security ════ */}
-      <section className="bg-[#060B17] py-20">
+      <section className="bg-background dark:bg-[#060B17] py-20 border-t border-border dark:border-transparent">
         <SectionIn className="max-w-5xl mx-auto px-4 sm:px-6">
           <Reveal>
             <div className="text-center mb-10">
-              <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">
+              <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground dark:text-slate-500 mb-3">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="h-2 w-2 rounded-full bg-emerald-500 relative" />
                 </span>
                 Protocol Live
               </span>
-              <h2 className="text-3xl font-bold text-white">Real-Time Protocol Activity</h2>
+              <h2 className="text-3xl font-bold text-foreground dark:text-white">Real-Time Protocol Activity</h2>
             </div>
           </Reveal>
           <Reveal delay={0.1}>
-            <div className="rounded-xl bg-[#0D1321] border border-white/5 divide-y divide-white/5 overflow-hidden">
+            <div className="rounded-xl bg-card dark:bg-[#0D1321] border border-border dark:border-white/5 divide-y divide-border dark:divide-white/5 overflow-hidden shadow-sm dark:shadow-none">
               {[
                 { action: "📄 LC Issued", party: "Acme Corp → Delta Supply Co.", amount: "$420,000 USDC", time: "2 min ago", badge: "Confirmed" },
                 { action: "💰 Invoice Financed", party: "TradeMax GmbH · 4.2% APR", amount: "$180,000 USDT", time: "11 min ago", badge: "Active" },
@@ -851,12 +851,12 @@ export default function Website() {
                 { action: "🔒 FX Hedge Locked", party: "EUR/USD Forward Contract", amount: "€250,000 notional", time: "35 min ago", badge: "Locked" },
                 { action: "🏛️ Dispute Resolved", party: "Arbitration #A-0012", amount: "$67,000 released", time: "1h ago", badge: "Resolved" },
               ].map((tx, i) => (
-                <div key={i} className="flex items-center gap-4 px-6 py-4 hover:bg-white/2 transition-colors">
-                  <span className="text-sm">{tx.action}</span>
-                  <span className="text-sm text-slate-400 hidden sm:block">{tx.party}</span>
-                  <span className="ml-auto font-mono text-sm text-slate-300 flex-shrink-0">{tx.amount}</span>
-                  <span className="text-xs text-slate-500 hidden sm:block flex-shrink-0 w-20 text-right">{tx.time}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium hidden md:block flex-shrink-0">{tx.badge}</span>
+                <div key={i} className="flex items-center gap-4 px-6 py-4 hover:bg-muted/50 dark:hover:bg-white/5 transition-colors">
+                  <span className="text-sm text-foreground">{tx.action}</span>
+                  <span className="text-sm text-muted-foreground hidden sm:block">{tx.party}</span>
+                  <span className="ml-auto font-mono text-sm text-foreground dark:text-slate-300 flex-shrink-0">{tx.amount}</span>
+                  <span className="text-xs text-muted-foreground hidden sm:block flex-shrink-0 w-20 text-right">{tx.time}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-medium hidden md:block flex-shrink-0">{tx.badge}</span>
                 </div>
               ))}
             </div>
@@ -894,21 +894,21 @@ export default function Website() {
       {/* ════════════════════════════════════
           FOOTER
       ════════════════════════════════════ */}
-      <footer className="bg-[#060B17] border-t border-white/5">
+      <footer className="bg-slate-100 dark:bg-[#060B17] border-t border-slate-200 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
             {/* Brand */}
             <div className="col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <img src={logoPath} alt="BlockFinaX" className="h-7 w-7" />
-                <span className="font-bold text-white">BlockFinaX</span>
+                <span className="font-bold text-slate-900 dark:text-white">BlockFinaX</span>
               </div>
-              <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-5">
+              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs leading-relaxed mb-5">
                 The decentralized infrastructure layer for global trade finance. Transparent, programmable, borderless.
               </p>
               <div className="flex gap-3">
                 {[Twitter, Github, Linkedin].map((Icon, i) => (
-                  <a key={i} href="#" className="w-8 h-8 rounded-md border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/30 transition-all">
+                  <a key={i} href="#" className="w-8 h-8 rounded-md border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-500 dark:hover:border-white/30 transition-all">
                     <Icon size={14} />
                   </a>
                 ))}
@@ -922,17 +922,17 @@ export default function Website() {
               { title: "Legal", links: ["Privacy Policy", "Terms of Service", "Cookie Policy"] },
             ].map(({ title, links }) => (
               <div key={title}>
-                <h5 className="text-sm font-semibold text-white mb-4">{title}</h5>
+                <h5 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">{title}</h5>
                 <ul className="space-y-3">
                   {links.map(l => (
-                    <li key={l}><a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">{l}</a></li>
+                    <li key={l}><a href="#" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{l}</a></li>
                   ))}
                 </ul>
               </div>
             ))}
           </div>
 
-          <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+          <div className="pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500 dark:text-slate-500">
             <p>© 2026 BlockFinaX Protocol. All rights reserved.</p>
             <p>Built on Ethereum & Base L2 · Non-custodial · Open Source</p>
           </div>
