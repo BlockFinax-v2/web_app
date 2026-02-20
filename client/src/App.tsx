@@ -45,6 +45,30 @@ import Referrals from "@/pages/rewards-referrals";
 import AdminDashboard from "@/pages/admin-dashboard";
 import EscrowDashboard from "@/pages/escrow-dashboard";
 import AdminNav from "@/components/admin/admin-nav";
+import { MainLayout } from "@/components/layout/main-layout";
+import { useWallet } from "@/hooks/use-wallet";
+import { Redirect } from "wouter";
+
+// A wrapper for authenticated routes that requires a connected wallet
+// and encapsulates the view within the responsive MainLayout framework
+function AuthenticatedRoute({ component: Component, path }: { component: any, path: string }) {
+  const { wallet } = useWallet();
+  
+  return (
+    <Route path={path}>
+      {() => {
+        if (!wallet) {
+          return <Redirect to="/login" />;
+        }
+        return (
+          <MainLayout>
+            <Component />
+          </MainLayout>
+        );
+      }}
+    </Route>
+  );
+}
 
 function Router() {
   return (
@@ -62,25 +86,25 @@ function Router() {
       <Route path="/unlock-wallet" component={UnlockWallet} />
       <Route path="/login" component={Login} />
 
-      {/* Role dashboards */}
-      <Route path="/role-selection" component={RoleSelection} />
-      <Route path="/exporter-dashboard" component={ExporterDashboard} />
-      <Route path="/importer-dashboard" component={ImporterDashboard} />
-      <Route path="/financier-dashboard" component={FinancierDashboard} />
+      {/* Role dashboards (Wrapped in MainLayout) */}
+      <AuthenticatedRoute path="/role-selection" component={RoleSelection} />
+      <AuthenticatedRoute path="/exporter-dashboard" component={ExporterDashboard} />
+      <AuthenticatedRoute path="/importer-dashboard" component={ImporterDashboard} />
+      <AuthenticatedRoute path="/financier-dashboard" component={FinancierDashboard} />
 
       {/* Trade & finance */}
-      <Route path="/trade-finance" component={TradeFinance} />
-      <Route path="/treasury" component={TreasuryPortal} />
-      <Route path="/treasury/specialists" component={SpecialistDiscovery} />
-      <Route path="/contracts" component={Contracts} />
-      <Route path="/marketplace" component={Marketplace} />
-      <Route path="/hedge" component={Hedge} />
+      <AuthenticatedRoute path="/trade-finance" component={TradeFinance} />
+      <AuthenticatedRoute path="/treasury" component={TreasuryPortal} />
+      <AuthenticatedRoute path="/treasury/specialists" component={SpecialistDiscovery} />
+      <AuthenticatedRoute path="/contracts" component={Contracts} />
+      <AuthenticatedRoute path="/marketplace" component={Marketplace} />
+      <AuthenticatedRoute path="/hedge" component={Hedge} />
 
       {/* Rewards & admin */}
-      <Route path="/rewards" component={Referrals} />
-      <Route path="/admin-nav" component={AdminNav} />
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/escrow-admin" component={EscrowDashboard} />
+      <AuthenticatedRoute path="/rewards" component={Referrals} />
+      <AuthenticatedRoute path="/admin-nav" component={AdminNav} />
+      <AuthenticatedRoute path="/admin" component={AdminDashboard} />
+      <AuthenticatedRoute path="/escrow-admin" component={EscrowDashboard} />
 
       <Route component={NotFound} />
     </Switch>
@@ -88,15 +112,18 @@ function Router() {
 }
 
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { TransactionSignerProvider } from "@/contexts/TransactionSignerContext";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <TransactionSignerProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </TransactionSignerProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

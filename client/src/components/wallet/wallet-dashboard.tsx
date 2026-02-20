@@ -1,22 +1,57 @@
-// Dummy wallet dashboard component — no real blockchain integration
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpRight, ArrowDownLeft, TrendingUp } from 'lucide-react';
-
-const DUMMY_BALANCES = [
-  { symbol: 'USDC', name: 'USD Coin', balance: '12,450.00', usdValue: '$12,450.00', change: '+2.3%', positive: true },
-  { symbol: 'ETH', name: 'Ethereum', balance: '3.812', usdValue: '$12,084.36', change: '+5.1%', positive: true },
-  { symbol: 'BTC', name: 'Bitcoin', balance: '0.2841', usdValue: '$18,912.50', change: '-0.8%', positive: false },
-];
+import { ArrowUpRight, ArrowDownLeft, TrendingUp, Loader2 } from 'lucide-react';
+import { ethers } from 'ethers';
+import { NETWORK_CONFIGS } from '@/config/alchemyAccount';
 
 interface Props {
   address: string;
   networkId?: number;
+  selectedNetworkId?: number;
   onSend?: () => void;
   onReceive?: () => void;
+  onTabChange?: (tab: string) => void;
 }
 
-export function EnhancedWalletOverview({ address }: Props) {
+export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
+  const [balanceETH, setBalanceETH] = useState<string>("0.00");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchBalance() {
+      if (!address) return;
+      try {
+        setLoading(true);
+        const configs = Object.values(NETWORK_CONFIGS);
+        const network = configs.find(n => n.chainId === networkId) || configs[0];
+        
+        if (network && network.rpcUrl) {
+          const provider = new ethers.JsonRpcProvider(network.rpcUrl);
+          const balanceWei = await provider.getBalance(address);
+          const balStr = ethers.formatEther(balanceWei);
+          // Round to 4 decimal places
+          if (isMounted) setBalanceETH(parseFloat(balStr).toFixed(4));
+        }
+      } catch (err) {
+        console.error("Failed to fetch balance", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    fetchBalance();
+    return () => { isMounted = false; };
+  }, [address, networkId]);
+
+  // We keep USDC and BTC as dummy visual placeholders for now to maintain the rich UI
+  // until a covalent/alchemy token API is fully integrated, but ETH is real.
+  const ASSETS = [
+    { symbol: 'ETH', name: 'Ethereum', balance: balanceETH, usdValue: '---', change: '+0.0%', positive: true, isReal: true },
+    { symbol: 'USDC', name: 'USD Coin', balance: '12,450.00', usdValue: '$12,450.00', change: '+2.3%', positive: true, isReal: false },
+    { symbol: 'BTC', name: 'Bitcoin', balance: '0.2841', usdValue: '$18,912.50', change: '-0.8%', positive: false, isReal: false },
+  ];
+
   const totalUsd = '$43,446.86';
 
   return (
@@ -36,7 +71,7 @@ export function EnhancedWalletOverview({ address }: Props) {
 
       {/* Asset List */}
       <div className="space-y-3">
-        {DUMMY_BALANCES.map(asset => (
+        {ASSETS.map(asset => (
           <Card key={asset.symbol}>
             <CardContent className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -44,12 +79,17 @@ export function EnhancedWalletOverview({ address }: Props) {
                   {asset.symbol.slice(0, 2)}
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">{asset.symbol}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{asset.symbol}</p>
+                    {!asset.isReal && <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">Mock</Badge>}
+                  </div>
                   <p className="text-xs text-muted-foreground">{asset.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-semibold text-sm">{asset.balance}</p>
+                <div className="flex items-center justify-end gap-2">
+                  {loading && asset.isReal ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" /> : <p className="font-semibold text-sm">{asset.balance}</p>}
+                </div>
                 <p className="text-xs text-muted-foreground">{asset.usdValue}</p>
                 <Badge variant={asset.positive ? 'default' : 'destructive'} className="text-xs mt-0.5">
                   {asset.change}

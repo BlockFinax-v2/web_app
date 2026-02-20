@@ -6,3 +6,7 @@ vite.config.ts.*
 *.tar.gz
 .local
 .config
+.env
+client/.env
+server/.env
+*.env

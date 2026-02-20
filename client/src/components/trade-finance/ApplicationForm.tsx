@@ -39,7 +39,10 @@ import {
   XCircle,
   Handshake
 } from "lucide-react";
-import { queryClient, apiRequest } from "@/lib/api-client";
+import { queryClient } from "@/lib/api-client";
+import { useTransactionSigner } from "@/contexts/TransactionSignerContext";
+import { tradeFinanceService } from "@/services/tradeFinanceService";
+
 // Dummy replacements for removed blockchain libs
 const secureStorage = { loadSettings: () => ({ selectedNetworkId: 1 }) };
 const getNetworkById = (_id: number) => ({ name: 'Ethereum Mainnet', chainId: 1 });
@@ -58,6 +61,7 @@ interface UploadedFile {
 
 export function ApplicationForm({ walletAddress }: { walletAddress: string }) {
   const { toast } = useToast();
+  const { requestSignature } = useTransactionSigner();
   const [financingType, setFinancingType] = useState("letter_of_credit");
   const [buyerCompanyName, setBuyerCompanyName] = useState("");
   const [buyerRegistrationNumber, setBuyerRegistrationNumber] = useState("");
@@ -137,25 +141,32 @@ export function ApplicationForm({ walletAddress }: { walletAddress: string }) {
           };
         })
       );
-      return await apiRequest("POST", "/api/trade-finance/applications", {
-        buyerAddress: walletAddress.toLowerCase(),
-        financingType,
-        buyerCompanyName,
-        buyerRegistrationNumber,
-        buyerCountry,
-        buyerContactPerson,
-        buyerEmail,
-        buyerPhone,
-        sellerAddress: sellerAddress.toLowerCase(),
-        tradeDescription,
-        tradeValue,
-        requestedAmount,
-        collateralDescription: collateralType === "wallet_balance" ? "Wallet Balance" : "No Collateral",
-        collateralValue: collateralType === "wallet_balance" ? (walletBalance || "0") : "0",
-        requestedDuration: parseInt(requestedDuration),
-        salesContractNumber,
-        salesContractDate,
-        documents,
+      const pgaId = `PGA-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+      
+      const documentURIs = documents.map(d => `ipfs://${d.hash}`);
+
+      return requestSignature({
+        title: "Create Trade Application",
+        description: `Creating Pool Guarantee Application for ${parseFloat(requestedAmount).toLocaleString()} USDC`,
+        amountUSD: parseFloat(requestedAmount),
+        execute: async (privateKey) => {
+          return tradeFinanceService.createPGA(privateKey, {
+            pgaId,
+            seller: sellerAddress.toLowerCase(),
+            companyName: buyerCompanyName,
+            registrationNumber: buyerRegistrationNumber,
+            tradeDescription: tradeDescription,
+            tradeValue: tradeValue,
+            guaranteeAmount: requestedAmount,
+            collateralAmount: collateralType === "wallet_balance" ? (walletBalance || "0") : "0",
+            issuanceFee: calculatedFee,
+            duration: parseInt(requestedDuration),
+            beneficiaryName: buyerContactPerson,
+            beneficiaryWallet: sellerAddress,
+            metadataURI: `ipfs://${documents[0].hash}`, // Using first doc hash as generic metadata for now
+            documentURIs: documentURIs
+          });
+        }
       });
     },
     onSuccess: () => {

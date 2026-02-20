@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Package, Loader2, CheckCircle2, XCircle, DollarSignIcon, Eye } from "lucide-react";
-import { queryClient, apiRequest } from "@/lib/api-client";
+import { useTransactionSigner } from "@/contexts/TransactionSignerContext";
+import { queryClient } from "@/lib/api-client";
+import { tradeFinanceService } from "@/services/tradeFinanceService";
 import { ApplicationDetail } from "./ApplicationDetail";
 import { ProgressTracker } from "./ProgressTracker";
 import {
@@ -22,11 +24,18 @@ interface SellerDashboardTabProps {
 
 export function SellerDashboardTab({ applications, isLoading, walletAddress }: SellerDashboardTabProps) {
   const { toast } = useToast();
+  const { requestSignature } = useTransactionSigner();
   const [selectedApp, setSelectedApp] = useState<any>(null);
 
   const approveMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      return await apiRequest("POST", `/api/trade-finance/applications/${requestId}/approve`, { sellerAddress: walletAddress });
+    mutationFn: async (pgaId: string) => {
+      return requestSignature({
+        title: "Approve Trade Finance Application",
+        description: `Confirming you are the seller for PGA ${pgaId.substring(0,8)}`,
+        execute: async (privateKey) => {
+          return tradeFinanceService.approvePGA(privateKey, pgaId);
+        }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trade-finance/applications", "seller", walletAddress] });
@@ -38,8 +47,10 @@ export function SellerDashboardTab({ applications, isLoading, walletAddress }: S
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      return await apiRequest("POST", `/api/trade-finance/applications/${requestId}/reject`, { sellerAddress: walletAddress, rejectionReason: "Seller rejected" });
+    mutationFn: async (pgaId: string) => {
+      // Temporary mock or skip for rejecting since there's no native reject on the diamond
+      toast({ title: "Not Supported", description: "Rejecting from smart contract is currently not supported. Wait for expiration.", variant: "destructive" });
+      throw new Error("Not supported");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trade-finance/applications", "seller", walletAddress] });
@@ -51,8 +62,14 @@ export function SellerDashboardTab({ applications, isLoading, walletAddress }: S
   });
 
   const confirmPaymentMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      return await apiRequest("POST", `/api/trade-finance/applications/${requestId}/seller-confirm-payment`, { sellerAddress: walletAddress });
+    mutationFn: async (pgaId: string) => {
+      return requestSignature({
+        title: "Confirm Payment Received",
+        description: `Confirming full balance payment received for PGA ${pgaId.substring(0,8)}`,
+        execute: async (privateKey) => {
+          return tradeFinanceService.confirmBalancePaymentReceived(privateKey, pgaId);
+        }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trade-finance/applications", "seller", walletAddress] });
@@ -107,16 +124,16 @@ export function SellerDashboardTab({ applications, isLoading, walletAddress }: S
             <div className="flex gap-2 mt-3">
               {app.status === "draft_sent_to_seller" && (
                 <>
-                  <Button size="sm" onClick={() => approveMutation.mutate(app.requestId)} disabled={approveMutation.isPending}>
+                  <Button size="sm" onClick={() => approveMutation.mutate(app.pgaId || app.requestId)} disabled={approveMutation.isPending}>
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => rejectMutation.mutate(app.requestId)} disabled={rejectMutation.isPending}>
+                  <Button size="sm" variant="destructive" onClick={() => rejectMutation.mutate(app.pgaId || app.requestId)} disabled={rejectMutation.isPending}>
                     <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
                   </Button>
                 </>
               )}
               {(app.status === "buyer_payment_uploaded" || app.status === "seller_payment_confirmed") && (
-                <Button size="sm" onClick={() => confirmPaymentMutation.mutate(app.requestId)} disabled={confirmPaymentMutation.isPending}>
+                <Button size="sm" onClick={() => confirmPaymentMutation.mutate(app.pgaId || app.requestId)} disabled={confirmPaymentMutation.isPending}>
                   <DollarSignIcon className="h-3.5 w-3.5 mr-1" /> Confirm Payment
                 </Button>
               )}

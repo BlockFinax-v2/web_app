@@ -35,7 +35,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { Invoice, InvoiceItem } from '@shared/schema';
+export type Invoice = any;
+export type InvoiceItem = any;
 
 interface InvoiceManagerProps {
   walletAddress: string;
@@ -329,7 +330,7 @@ export function InvoiceManager({ walletAddress }: InvoiceManagerProps) {
         yPos += 7;
         doc.setFont('helvetica', 'normal');
         
-        selectedInvoiceDetails.items.forEach(item => {
+        selectedInvoiceDetails.items.forEach((item: any) => {
           doc.text(item.itemName, 20, yPos);
           doc.text(item.quantity.toString(), 110, yPos);
           doc.text(`${parseFloat(item.unitPrice).toFixed(2)}`, 140, yPos);
@@ -1011,7 +1012,7 @@ export function InvoiceManager({ walletAddress }: InvoiceManagerProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedInvoiceDetails.items.map((item, index) => (
+                        {selectedInvoiceDetails.items.map((item: any, index: number) => (
                           <tr key={index} className="border-t">
                             <td className="p-3">
                               <div className="font-medium">{item.itemName}</div>

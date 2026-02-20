@@ -8,8 +8,12 @@ const NETWORKS = [
   { id: 42161, name: 'Arbitrum', symbol: 'ETH' },
 ];
 
-interface Props { selectedNetworkId?: number; onNetworkChange?: (id: number) => void; }
-export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange }: Props) {
+interface Props { 
+  selectedNetworkId?: number; 
+  onNetworkChange?: (id: number) => void; 
+  className?: string; 
+}
+export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange, className }: Props) {
   const current = NETWORKS.find(n => n.id === selectedNetworkId) || NETWORKS[0];
   return (
     <div className="flex items-center gap-2">

@@ -31,12 +31,12 @@ export function OffersTab({ applications, isLoading, walletAddress }: OffersTabP
   return (
     <div className="space-y-6">
       {appsWithOffers.map((app: any) => (
-        <div key={app.requestId || app.id}>
+        <div key={app.pgaId || app.requestId || app.id}>
           <div className="flex items-center gap-2 mb-3">
             <h3 className="text-sm font-semibold">{app.buyerCompanyName || "Application"}</h3>
             <Badge variant="outline" className="text-xs">${parseFloat(app.requestedAmount || "0").toLocaleString()}</Badge>
           </div>
-          <OffersForApplication requestId={app.requestId} walletAddress={walletAddress} />
+          <OffersForApplication pgaId={app.pgaId || app.requestId} walletAddress={walletAddress} />
         </div>
       ))}
     </div>

@@ -121,7 +121,7 @@ export default function Invoices() {
         </div>
 
         {/* Main Invoice Manager */}
-        <InvoiceManager walletAddress={wallet.address} />
+        <InvoiceManager walletAddress={wallet.address || ""} />
 
         {/* Info Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

@@ -287,7 +287,7 @@ export default function TreasuryPortal() {
   });
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <>
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -469,7 +469,7 @@ export default function TreasuryPortal() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
 

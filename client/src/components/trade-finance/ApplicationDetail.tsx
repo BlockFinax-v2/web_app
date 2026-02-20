@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TruckIcon, Upload, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { queryClient, apiRequest } from "@/lib/api-client";
+import { queryClient } from "@/lib/api-client";
+import { useTransactionSigner } from "@/contexts/TransactionSignerContext";
+import { tradeFinanceService } from "@/services/tradeFinanceService";
 import { ProgressTracker } from "./ProgressTracker";
 import { OffersForApplication } from "./OffersForApplication";
 import {
@@ -50,6 +52,7 @@ interface ApplicationDetailProps {
 
 export function ApplicationDetail({ app, onBack, walletAddress, role }: ApplicationDetailProps) {
   const { toast } = useToast();
+  const { requestSignature } = useTransactionSigner();
   const [bolNumber, setBolNumber] = useState("");
   const [bolTrackingNumber, setBolTrackingNumber] = useState("");
   const [bolLogisticsProvider, setBolLogisticsProvider] = useState("");
@@ -57,13 +60,20 @@ export function ApplicationDetail({ app, onBack, walletAddress, role }: Applicat
   const [showBolDialog, setShowBolDialog] = useState(false);
   const [showDeliveryDialog, setShowDeliveryDialog] = useState(false);
 
+  // Use pgaId instead of requestId to match smart contract standard
+  const pgaId = app.pgaId || app.requestId;
+
   const uploadBolMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/trade-finance/applications/${app.requestId}/seller-upload-bol`, {
-        sellerAddress: walletAddress,
-        bolNumber,
-        trackingNumber: bolTrackingNumber,
-        logisticsProvider: bolLogisticsProvider,
+      // Create a dummy IPFS URI representation for the bill of lading
+      const proofOfShipmentURI = `ipfs://shipping/${bolNumber}/${bolTrackingNumber}`;
+      
+      return requestSignature({
+        title: "Confirm Goods Shipped",
+        description: `Uploading Bill of Lading ${bolNumber} on-chain via logistics partner`,
+        execute: async (privateKey) => {
+          return tradeFinanceService.confirmGoodsShipped(privateKey, pgaId, proofOfShipmentURI);
+        }
       });
     },
     onSuccess: () => {
@@ -80,9 +90,15 @@ export function ApplicationDetail({ app, onBack, walletAddress, role }: Applicat
 
   const confirmDeliveryMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/trade-finance/applications/${app.requestId}/buyer-confirm-delivery`, {
-        buyerAddress: walletAddress,
-        deliveryCondition,
+      // Create a dummy IPFS URI representation for proof of delivery
+      const proofOfDeliveryURI = `ipfs://delivery/${deliveryCondition}`;
+
+      return requestSignature({
+        title: "Confirm Goods Delivered",
+        description: `Confirming receipt and condition (${deliveryCondition}) to release final seller payment`,
+        execute: async (privateKey) => {
+          return tradeFinanceService.confirmGoodsDelivered(privateKey, pgaId, proofOfDeliveryURI);
+        }
       });
     },
     onSuccess: () => {
@@ -141,10 +157,10 @@ export function ApplicationDetail({ app, onBack, walletAddress, role }: Applicat
             </div>
           )}
 
-          {role === "buyer" && app.requestId && (
+          {role === "buyer" && pgaId && (
             <div className="border-t pt-4">
               <h4 className="text-sm font-semibold mb-3">Financing Offers</h4>
-              <OffersForApplication requestId={app.requestId} walletAddress={walletAddress} />
+              <OffersForApplication pgaId={pgaId} walletAddress={walletAddress} />
             </div>
           )}
 
@@ -206,7 +222,7 @@ export function ApplicationDetail({ app, onBack, walletAddress, role }: Applicat
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                By confirming delivery, you acknowledge receipt of goods for trade #{app.requestId?.substring(0, 8)}
+                By confirming delivery, you acknowledge receipt of goods for trade #{pgaId?.substring(0, 8)}
               </AlertDescription>
             </Alert>
           </div>

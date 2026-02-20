@@ -71,10 +71,11 @@ const DEFAULT_STATE: WalletState = {
   isSmartAccountInitialized: false,
 };
 
-// ─── Module-Level Unlocked State ──────────────────────────────────────
+// ─── Module-Level State ──────────────────────────────────────
 
-let unlockedPrivateKey: string | null = null;
-let unlockedMnemonic: string | null = null;
+// REMOVED IN SECURE ON-DEMAND SIGNING: We no longer store the unencrypted
+// private key or mnemonic in memory. They MUST be retrieved from browserStorage
+// via password prompt at the exact moment a transaction requires them.
 
 // Global state so session persists across different hook instances/pages
 let globalState: WalletState = { ...DEFAULT_STATE };
@@ -187,7 +188,6 @@ export function useWallet() {
       setLoading(true);
       try {
         const privateKey = generatePrivateKey();
-        unlockedPrivateKey = privateKey;
         await storeEncryptedPrivateKey(privateKey, password);
         await setupUnlockedState(privateKey, name || 'My Wallet');
         toast({ title: '🎉 Wallet Created', description: 'Your BlockFinaX wallet is ready with Smart Account support.' });
@@ -226,7 +226,6 @@ export function useWallet() {
           await storeEncryptedMnemonic(input, password);
         }
 
-        unlockedPrivateKey = privateKey;
         await storeEncryptedPrivateKey(privateKey, password);
         await setupUnlockedState(privateKey, name || 'Imported Wallet');
         toast({ title: '✅ Wallet Imported', description: 'Your wallet is now secured with Smart Account Abstraction.' });
@@ -256,8 +255,6 @@ export function useWallet() {
         }
 
         const privateKey = await retrieveDecryptedPrivateKey(password);
-        unlockedPrivateKey = privateKey;
-        unlockedMnemonic = await retrieveDecryptedMnemonic(password).catch(() => null);
         await setupUnlockedState(privateKey);
         toast({ title: 'Welcome back! 👋', description: 'Wallet unlocked. Smart Account is active.' });
         return { address: getStoredAddress()! };
@@ -277,8 +274,6 @@ export function useWallet() {
    */
   const lockWallet = useCallback(() => {
     if (autoLockTimer) clearTimeout(autoLockTimer);
-    unlockedPrivateKey = null;
-    unlockedMnemonic = null;
     setState((prev) => ({
       ...prev,
       isUnlocked: false,
@@ -295,8 +290,6 @@ export function useWallet() {
    */
   const deleteWallet = useCallback(() => {
     clearAllWalletData();
-    unlockedPrivateKey = null;
-    unlockedMnemonic = null;
     setState({ ...DEFAULT_STATE });
     toast({ title: 'Wallet Deleted', description: 'All wallet data has been removed from this device.' });
   }, [toast]);
@@ -316,13 +309,16 @@ export function useWallet() {
 
   // ── Export ───────────────────────────────────────────────────────────
 
-  const exportPrivateKey = useCallback((): string => {
-    if (!unlockedPrivateKey) throw new Error("Wallet is locked or not initialized.");
-    return unlockedPrivateKey;
+  const exportPrivateKey = useCallback(async (password: string): Promise<string> => {
+    return retrieveDecryptedPrivateKey(password);
   }, []);
 
-  const exportMnemonic = useCallback((): string | null => {
-    return unlockedMnemonic;
+  const exportMnemonic = useCallback(async (password: string): Promise<string | null> => {
+    try {
+      return await retrieveDecryptedMnemonic(password);
+    } catch {
+      return null;
+    }
   }, []);
 
   // ── Return ───────────────────────────────────────────────────────────

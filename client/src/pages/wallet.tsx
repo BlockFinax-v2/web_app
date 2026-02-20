@@ -83,9 +83,12 @@ export default function Wallet() {
     return null; // Will redirect
   }
 
-  const handleExportPrivateKey = () => {
+  const handleExportPrivateKey = async () => {
     try {
-      const privateKey = exportPrivateKey();
+      const password = window.prompt("Enter your wallet password to export private key:");
+      if (!password) return;
+      
+      const privateKey = await exportPrivateKey(password);
       setExportedData(privateKey);
       setExportType('privateKey');
       setExportModalOpen(true);
@@ -99,9 +102,12 @@ export default function Wallet() {
     }
   };
 
-  const handleExportMnemonic = () => {
+  const handleExportMnemonic = async () => {
     try {
-      const mnemonic = exportMnemonic();
+      const password = window.prompt("Enter your wallet password to export seed phrase:");
+      if (!password) return;
+
+      const mnemonic = await exportMnemonic(password);
       if (mnemonic) {
         setExportedData(mnemonic);
         setExportType('mnemonic');
@@ -298,7 +304,8 @@ export default function Wallet() {
 
           <TabsContent value="overview" className="space-y-4">
             <EnhancedWalletOverview 
-              selectedNetworkId={selectedNetworkId}
+              address={wallet?.address || ""}
+              networkId={selectedNetworkId}
               onTabChange={setActiveTab}
             />
             <TransactionHistory networkId={selectedNetworkId} />

@@ -41,7 +41,7 @@ export function MyApplicationsTab({ applications, isLoading, walletAddress }: My
         <ApplicationDetail app={selectedApp} onBack={() => setSelectedApp(null)} walletAddress={walletAddress} role="buyer" />
       ) : (
         applications.map((app: any) => (
-          <Card key={app.requestId || app.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedApp(app)}>
+          <Card key={app.pgaId || app.requestId || app.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedApp(app)}>
             <CardContent className="pt-4">
               <div className="flex items-start justify-between mb-2">
                 <div>

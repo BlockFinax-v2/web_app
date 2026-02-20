@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BarChart3, CheckCircle2 } from "lucide-react";
-import { HedgePosition, HedgeEvent } from "@shared/schema";
+import { HedgePosition, HedgeEvent } from "./types";
 import { getStatusBadgeStyle, getStatusLabel } from "./constants";
 
 interface PositionsTabProps {

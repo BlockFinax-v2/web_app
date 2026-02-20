@@ -1,4 +1,6 @@
-import type { HedgeEvent, HedgePosition, HedgeLpDeposit } from "@shared/schema";
+export type HedgeEvent = any;
+export type HedgePosition = any;
+export type HedgeLpDeposit = any;
 
 export type EventWithStats = HedgeEvent & {
     poolStats?: {

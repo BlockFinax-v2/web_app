@@ -29,7 +29,7 @@ const DUMMY_EVENTS: EventWithStats[] = [
   { id: 1, name: "USD/GHS Q1 Protection", status: "open", premiumRate: "0.05", payoutRate: "0.80", underlying: "USD/GHS", strike: "12.50", expiryDate: new Date(Date.now() + 30 * 86400000).toISOString(), totalNotional: 250000, totalDeposited: 120000 } as any,
   { id: 2, name: "USD/NGN Q1 Protection", status: "open", premiumRate: "0.04", payoutRate: "0.75", underlying: "USD/NGN", strike: "1600", expiryDate: new Date(Date.now() + 45 * 86400000).toISOString(), totalNotional: 180000, totalDeposited: 90000 } as any,
 ];
-const DUMMY_FX: FXData = { rates: { "USD/GHS": { pair: "USD/GHS", rate: 12.48, source: "Oracle" } as any, "USD/NGN": { pair: "USD/NGN", rate: 1598.5, source: "Oracle" } as any } };
+const DUMMY_FX: FXData = { rates: { "USD/GHS": { pair: "USD/GHS", rate: 12.48, source: "Oracle" } as any, "USD/NGN": { pair: "USD/NGN", rate: 1598.5, source: "Oracle" } as any }, pairs: ["USD/GHS", "USD/NGN"] };
 // ---- End dummy data ----
 
 
@@ -97,7 +97,7 @@ export default function Hedge() {
   const payoutCalc = selectedEvent && notional ? parseFloat(notional) * parseFloat(selectedEvent.payoutRate) : 0;
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <>
       <div className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export default function Hedge() {
             <TabsTrigger value="positions" className="data-[state=active]:bg-primary"><BarChart3 className="h-4 w-4 mr-2" /> My Positions</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="hedger"><HedgerTab events={events} isLoading={eventsLoading} fxData={fxData} walletAddress={wallet.address} onBuyProtection={(e) => { fetchEventDetails(e.id); setBuyDialogOpen(true); }} onSettleEvent={(e) => { fetchEventDetails(e.id); setSettleDialogOpen(true); }} /></TabsContent>
+          <TabsContent value="hedger"><HedgerTab events={events} isLoading={eventsLoading} fxData={fxData} walletAddress={wallet.address || ""} onBuyProtection={(e) => { fetchEventDetails(e.id); setBuyDialogOpen(true); }} onSettleEvent={(e) => { fetchEventDetails(e.id); setSettleDialogOpen(true); }} /></TabsContent>
           <TabsContent value="provider"><ProviderTab events={events} isLoading={eventsLoading} myDeposits={myDeposits} treasuryAddress={treasuryAddress} onDeposit={(e) => { fetchEventDetails(e.id); setDepositDialogOpen(true); }} onWithdraw={(id) => withdrawMutation.mutate(id)} onClaimPremiums={(id) => claimPremiumsMutation.mutate(id)} isWithdrawPending={withdrawMutation.isPending} isClaimPending={claimPremiumsMutation.isPending} /></TabsContent>
           <TabsContent value="positions"><PositionsTab positions={myPositions} events={events} onClaim={(id) => claimMutation.mutate(id)} isClaimPending={claimMutation.isPending} /></TabsContent>
         </Tabs>
@@ -176,6 +176,6 @@ export default function Hedge() {
       <DepositLiquidityDialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen} selectedEvent={selectedEvent} depositAmount={depositAmount} onDepositAmountChange={setDepositAmount} onDeposit={() => depositMutation.mutate()} isPending={depositMutation.isPending} />
       <CreateEventDialog open={createEventDialogOpen} onOpenChange={setCreateEventDialogOpen} newEvent={newEvent} onNewEventChange={(u) => setNewEvent(p => ({ ...p, ...u }))} onCreate={() => createEventMutation.mutate()} isPending={createEventMutation.isPending} />
       <SettleEventDialog open={settleDialogOpen} onOpenChange={setSettleDialogOpen} selectedEvent={selectedEvent} settlementPrice={settlementPrice} onSettlementPriceChange={setSettlementPrice} onSettle={() => settleMutation.mutate()} isPending={settleMutation.isPending} fxData={fxData} />
-    </div>
+    </>
   );
 }

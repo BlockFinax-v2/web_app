@@ -48,23 +48,31 @@ export default function TradeFinancePage() {
   const [userRole, setUserRole] = useState<"buyer" | "seller">("buyer");
 
   const { data: buyerApps = [], isLoading: buyerLoading } = useQuery<any[]>({
-    queryKey: ["/api/trade-finance/applications", "buyer", address],
+    queryKey: ["pga", "buyer", address],
     queryFn: async () => {
       if (!address) return [];
-      const res = await fetch(`/api/trade-finance/applications?buyerAddress=${address}`, { credentials: "include" });
-      if (!res.ok) { if (res.status === 404) return []; throw new Error("Failed"); }
-      return res.json();
+      try {
+        const { tradeFinanceService } = await import("@/services/tradeFinanceService");
+        return await tradeFinanceService.getPGAsByBuyer(address);
+      } catch (err) {
+        console.error("Failed to fetch buyer PGAs:", err);
+        return [];
+      }
     },
     enabled: !!address,
   });
 
   const { data: sellerApps = [], isLoading: sellerLoading } = useQuery<any[]>({
-    queryKey: ["/api/trade-finance/applications", "seller", address],
+    queryKey: ["pga", "seller", address],
     queryFn: async () => {
       if (!address) return [];
-      const res = await fetch(`/api/trade-finance/applications?sellerAddress=${address}`, { credentials: "include" });
-      if (!res.ok) { if (res.status === 404) return []; throw new Error("Failed"); }
-      return res.json();
+      try {
+        const { tradeFinanceService } = await import("@/services/tradeFinanceService");
+        return await tradeFinanceService.getAllPGAsBySeller(address);
+      } catch (err) {
+        console.error("Failed to fetch seller PGAs:", err);
+        return [];
+      }
     },
     enabled: !!address,
   });
@@ -92,7 +100,7 @@ export default function TradeFinancePage() {
   const totalVolume = buyerApps.reduce((sum: number, a: any) => sum + parseFloat(a.requestedAmount || "0"), 0);
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <>
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -152,7 +160,7 @@ export default function TradeFinancePage() {
             </TabsContent>
           </Tabs>
         )}
-      </div>
     </div>
+    </>
   );
 }

@@ -4,32 +4,49 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Loader2, CheckCircle2, XCircle } from "lucide-react";
-import { queryClient, apiRequest } from "@/lib/api-client";
+import { queryClient } from "@/lib/api-client";
+import { useTransactionSigner } from "@/contexts/TransactionSignerContext";
+import { tradeFinanceService } from "@/services/tradeFinanceService";
 
 interface OffersForApplicationProps {
-  requestId: string;
+  pgaId: string;
   walletAddress: string;
 }
 
-export function OffersForApplication({ requestId, walletAddress }: OffersForApplicationProps) {
+export function OffersForApplication({ pgaId, walletAddress }: OffersForApplicationProps) {
   const { toast } = useToast();
+  const { requestSignature } = useTransactionSigner();
 
+  // For demonstration/local test we still fetch mock offers but use real blockchain writes.
   const { data: offers = [], isLoading } = useQuery<any[]>({
-    queryKey: ["/api/financing/offers", requestId],
+    queryKey: ["/api/financing/offers", pgaId],
     queryFn: async () => {
-      const res = await fetch(`/api/financing/offers/${requestId}`, { credentials: "include" });
+      const res = await fetch(`/api/financing/offers/${pgaId}`, { credentials: "include" });
       if (!res.ok) { if (res.status === 404) return []; throw new Error("Failed to fetch offers"); }
       return res.json();
     },
-    enabled: !!requestId,
+    enabled: !!pgaId,
   });
 
   const acceptMutation = useMutation({
     mutationFn: async (offerId: string) => {
-      return await apiRequest("POST", `/api/financing/offers/${offerId}/accept`, { buyerAddress: walletAddress });
+      // Find the specific offer to get the amount natively
+      const offer = offers.find(o => o.id === offerId);
+      const amountUSD = offer ? parseFloat(offer.amount || "0") : undefined;
+
+      return requestSignature({
+        title: "Accept Offer & Lock Collateral",
+        description: `Accepting financing offer and depositing collateral for PGA ${pgaId.substring(0,8)}`,
+        amountUSD,
+        execute: async (privateKey) => {
+          // On the smart contract, accepting an offer equates to locking in the collateral as a buyer
+          // Passing a dummy token address for USDC on Sepolia testnets
+          return tradeFinanceService.payCollateral(privateKey, pgaId, "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238");
+        }
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/financing/offers", requestId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/financing/offers", pgaId] });
       queryClient.invalidateQueries({ queryKey: ["/api/trade-finance/applications", "buyer", walletAddress] });
       toast({ title: "Offer Accepted", description: "You have accepted the financing offer. The trade will proceed." });
     },
@@ -40,10 +57,11 @@ export function OffersForApplication({ requestId, walletAddress }: OffersForAppl
 
   const rejectMutation = useMutation({
     mutationFn: async (offerId: string) => {
-      return await apiRequest("POST", `/api/financing/offers/${offerId}/reject`, { buyerAddress: walletAddress });
+      toast({ title: "Not Supported", description: "Rejecting from smart contract is currently not supported natively. Simply do not accept it.", variant: "destructive" });
+      throw new Error("Not supported");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/financing/offers", requestId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/financing/offers", pgaId] });
       toast({ title: "Offer Rejected", description: "Offer has been declined." });
     },
     onError: (error: any) => {

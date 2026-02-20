@@ -2,8 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, DollarSign, Wallet, Lock, Unlock } from "lucide-react";
-import { EventWithStats } from "./types";
-import { HedgeLpDeposit } from "@shared/schema";
+import { EventWithStats, HedgeLpDeposit } from "./types";
 
 interface ProviderTabProps {
   events: EventWithStats[];

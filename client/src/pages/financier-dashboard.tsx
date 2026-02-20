@@ -42,9 +42,8 @@ export default function FinancierDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
+    <div className="container mx-auto px-4 py-6">
+      {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold flex items-center">
             <Banknote className="mr-3 h-8 w-8 text-primary" />
@@ -443,7 +442,6 @@ export default function FinancierDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   );
 }
