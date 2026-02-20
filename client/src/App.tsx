@@ -46,6 +46,9 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import EscrowDashboard from "@/pages/escrow-dashboard";
 import AdminNav from "@/components/admin/admin-nav";
 import { MainLayout } from "@/components/layout/main-layout";
+import { AppShell } from "@/components/layout/app-shell";
+import { ExploreFeed } from "@/components/social/explore-feed";
+import { ChatInterface } from "@/components/chat/chat-interface";
 import { useWallet } from "@/hooks/use-wallet";
 import { Redirect } from "wouter";
 
@@ -61,9 +64,15 @@ function AuthenticatedRoute({ component: Component, path }: { component: any, pa
           return <Redirect to="/login" />;
         }
         return (
-          <MainLayout>
-            <Component />
-          </MainLayout>
+          <AppShell
+            exploreContent={<ExploreFeed />}
+            chatContent={<ChatInterface />}
+            tradeContent={
+              <MainLayout>
+                <Component />
+              </MainLayout>
+            }
+          />
         );
       }}
     </Route>
@@ -80,7 +89,7 @@ function Router() {
       <Route path="/waitlist" component={Waitlist} />
 
       {/* Wallet & auth */}
-      <Route path="/wallet" component={Wallet} />
+      <AuthenticatedRoute path="/wallet" component={Wallet} />
       <Route path="/create-wallet" component={CreateWallet} />
       <Route path="/import-wallet" component={ImportWallet} />
       <Route path="/unlock-wallet" component={UnlockWallet} />

@@ -14,7 +14,8 @@ import {
   Sun,
   ShieldCheck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Landmark
 } from "lucide-react";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useWallet } from "@/hooks/use-wallet";
@@ -27,11 +28,10 @@ interface MainLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { href: "/wallet", label: "Dashboard", icon: BarChart3 },
+  { href: "/wallet", label: "Wallet", icon: Wallet },
   { href: "/trade-finance", label: "Trade Finance", icon: Briefcase },
-  { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/hedge", label: "FX Hedge", icon: ShieldAlert },
-  { href: "/treasury", label: "Treasury", icon: Wallet },
+  { href: "/treasury", label: "Treasury", icon: Landmark },
 ];
 
 export function MainLayout({ children }: MainLayoutProps) {
@@ -160,7 +160,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex overflow-hidden">
+    <div className="h-full bg-background text-foreground flex overflow-hidden">
       
       {/* Desktop / Tablet Persistent Sidebar */}
       {!isMobile && (
@@ -177,7 +177,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Main Content Area */}
       <div 
         className={cn(
-          "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
+          "flex-1 flex flex-col h-full transition-all duration-300 ease-in-out",
           !isMobile && (isSidebarCollapsed ? "md:ml-20" : "md:ml-64")
         )}
       >
