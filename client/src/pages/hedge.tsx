@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { useWallet } from "@/hooks/use-wallet";
-import { queryClient, apiRequest } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,9 +9,6 @@ import {
   Award, Activity
 } from "lucide-react";
 import { Link } from "wouter";
-import type { HedgePosition, HedgeLpDeposit } from "@shared/schema";
-import { usdcManager } from "@/lib/usdc-manager";
-import { walletManager } from "@/lib/wallet";
 
 // Modular Components
 import { HedgerTab } from "@/components/hedge/HedgerTab";
@@ -24,6 +19,19 @@ import { DepositLiquidityDialog } from "@/components/hedge/dialogs/DepositLiquid
 import { CreateEventDialog } from "@/components/hedge/dialogs/CreateEventDialog";
 import { SettleEventDialog } from "@/components/hedge/dialogs/SettleEventDialog";
 import { EventWithStats, FXData, NewEventState } from "@/components/hedge/types";
+
+// ---- Dummy types (formerly from @shared/schema) ----
+type HedgePosition = { id: number; status: string; notional: string; eventId: number; };
+type HedgeLpDeposit = { id: number; amount: string; withdrawn: boolean; premiumsEarned?: string; eventId: number; };
+
+// ---- Dummy data ----
+const DUMMY_EVENTS: EventWithStats[] = [
+  { id: 1, name: "USD/GHS Q1 Protection", status: "open", premiumRate: "0.05", payoutRate: "0.80", underlying: "USD/GHS", strike: "12.50", expiryDate: new Date(Date.now() + 30 * 86400000).toISOString(), totalNotional: 250000, totalDeposited: 120000 } as any,
+  { id: 2, name: "USD/NGN Q1 Protection", status: "open", premiumRate: "0.04", payoutRate: "0.75", underlying: "USD/NGN", strike: "1600", expiryDate: new Date(Date.now() + 45 * 86400000).toISOString(), totalNotional: 180000, totalDeposited: 90000 } as any,
+];
+const DUMMY_FX: FXData = { rates: { "USD/GHS": { pair: "USD/GHS", rate: 12.48, source: "Oracle" } as any, "USD/NGN": { pair: "USD/NGN", rate: 1598.5, source: "Oracle" } as any } };
+// ---- End dummy data ----
+
 
 export default function Hedge() {
   const { wallet } = useWallet();
@@ -44,164 +52,31 @@ export default function Hedge() {
     expiryDays: "30"
   });
 
-  // Queries
-  const { data: events = [], isLoading: eventsLoading } = useQuery<EventWithStats[]>({
-    queryKey: ["/api/hedge/events"],
-  });
+  const events: EventWithStats[] = DUMMY_EVENTS;
+  const eventsLoading = false;
+  const myPositions: HedgePosition[] = [];
+  const treasuryAddress = { address: '0xTreasury...Demo' };
+  const fxData: FXData = DUMMY_FX;
+  const myDeposits: HedgeLpDeposit[] = [];
 
-  const { data: myPositions = [] } = useQuery<HedgePosition[]>({
-    queryKey: ["/api/hedge/positions", wallet?.address],
-    enabled: !!wallet?.address,
-    queryFn: () => fetch(`/api/hedge/positions/${wallet?.address}`).then(r => r.json()),
-  });
-
-  const { data: treasuryAddress } = useQuery<{ address: string }>({
-    queryKey: ["/api/hedge/treasury-address"],
-  });
-
-  const { data: fxData } = useQuery<FXData>({
-    queryKey: ["/api/fx/rates"],
-    refetchInterval: 5 * 60 * 1000,
-  });
-
-  const { data: myDeposits = [] } = useQuery<HedgeLpDeposit[]>({
-    queryKey: ["/api/hedge/deposits", wallet?.address],
-    enabled: !!wallet?.address,
-    queryFn: () => fetch(`/api/hedge/deposits/${wallet?.address}`).then(r => r.json()),
-  });
-
-  const fetchEventDetails = async (id: number) => {
-    const res = await fetch(`/api/hedge/events/${id}`);
-    const data = await res.json();
-    setSelectedEvent(data);
-    return data;
+  const fetchEventDetails = (id: number) => {
+    const event = DUMMY_EVENTS.find(e => e.id === id) || null;
+    setSelectedEvent(event);
+    return Promise.resolve(event);
   };
 
-  // Mutations
-  const buyProtectionMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedEvent || !treasuryAddress?.address) throw new Error("Treasury wallet not available");
-      const signer = await walletManager.getSigner();
-      if (!signer) throw new Error("Wallet signer not available");
-
-      const premium = parseFloat(notional) * parseFloat(selectedEvent.premiumRate);
-      const txHash = await usdcManager.transferUSDC(signer, treasuryAddress.address, premium.toFixed(6), 84532);
-
-      return await apiRequest("POST", "/api/hedge/positions", {
-        eventId: selectedEvent.id,
-        hedgerWallet: wallet?.address,
-        notional: parseFloat(notional),
-        txHash
-      });
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/events"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/positions", wallet?.address] });
-      if (selectedEvent) await fetchEventDetails(selectedEvent.id);
-      toast({ title: "Protection Purchased", description: `Notional: $${parseFloat(notional).toLocaleString()}` });
-      setBuyDialogOpen(false);
-      setNotional("");
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" })
+  const makeDummyMutation = (title: string, description: string, cleanup?: () => void) => ({
+    mutate: () => { setTimeout(() => { toast({ title, description }); cleanup?.(); }, 800); },
+    isPending: false,
   });
 
-  const depositMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedEvent || !treasuryAddress?.address || !wallet?.address) throw new Error("Missing data");
-      const signer = await walletManager.getSigner();
-      if (!signer) throw new Error("Wallet signer not available");
-
-      const txHash = await usdcManager.transferUSDC(signer, treasuryAddress.address, depositAmount, 84532);
-
-      return await apiRequest("POST", "/api/hedge/deposits", {
-        eventId: selectedEvent.id,
-        lpWallet: wallet.address,
-        amount: parseFloat(depositAmount),
-        txHash
-      });
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/events"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/deposits", wallet?.address] });
-      if (selectedEvent) await fetchEventDetails(selectedEvent.id);
-      toast({ title: "Liquidity Deposited", description: `$${parseFloat(depositAmount).toLocaleString()} USDC` });
-      setDepositDialogOpen(false);
-      setDepositAmount("");
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" })
-  });
-
-  const createEventMutation = useMutation({
-    mutationFn: async () => {
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + parseInt(newEvent.expiryDays));
-      return await apiRequest("POST", "/api/hedge/events", {
-        ...newEvent,
-        strike: parseFloat(newEvent.strike),
-        premiumRate: parseFloat(newEvent.premiumRate) / 100,
-        payoutRate: parseFloat(newEvent.payoutRate) / 100,
-        safetyFactor: parseFloat(newEvent.safetyFactor),
-        expiryDate: expiryDate.toISOString(),
-        createdBy: wallet?.address
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/events"] });
-      toast({ title: "Event Created", description: "New hedge event is now open" });
-      setCreateEventDialogOpen(false);
-      setNewEvent({ name: "", description: "", underlying: "USD/GHS", strike: "", premiumRate: "", payoutRate: "", safetyFactor: "0.80", expiryDays: "30" });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" })
-  });
-
-  const settleMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/hedge/events/${selectedEvent?.id}/settle`, {
-        settlementPrice: parseFloat(settlementPrice),
-        settlerAddress: wallet?.address
-      });
-      return res.json();
-    },
-    onSuccess: async (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/events"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/positions", wallet?.address] });
-      if (selectedEvent) await fetchEventDetails(selectedEvent.id);
-      toast({ title: "Event Settled", description: data.message });
-      setSettleDialogOpen(false);
-      setSettlementPrice("");
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" })
-  });
-
-  const claimMutation = useMutation({
-    mutationFn: async (positionId: number) => apiRequest("POST", `/api/hedge/positions/${positionId}/claim`, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/positions", wallet?.address] });
-      toast({ title: "Payout Claimed" });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" })
-  });
-
-  const withdrawMutation = useMutation({
-    mutationFn: async (depositId: number) => apiRequest("POST", `/api/hedge/deposits/${depositId}/withdraw`, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/deposits", wallet?.address] });
-      toast({ title: "Liquidity Withdrawn" });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" })
-  });
-
-  const claimPremiumsMutation = useMutation({
-    mutationFn: async (depositId: number) => {
-      const res = await apiRequest("POST", `/api/hedge/deposits/${depositId}/claim-premiums`, { callerAddress: wallet?.address });
-      return res.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hedge/deposits", wallet?.address] });
-      toast({ title: "Premiums Claimed", description: data.message });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" })
-  });
+  const buyProtectionMutation = makeDummyMutation("Protection Purchased (Demo)", `Notional: $${parseFloat(notional || '0').toLocaleString()}`, () => { setBuyDialogOpen(false); setNotional(''); });
+  const depositMutation = makeDummyMutation("Liquidity Deposited (Demo)", `$${parseFloat(depositAmount || '0').toLocaleString()} USDC`, () => { setDepositDialogOpen(false); setDepositAmount(''); });
+  const createEventMutation = makeDummyMutation("Event Created (Demo)", "New hedge event simulated", () => setCreateEventDialogOpen(false));
+  const settleMutation = makeDummyMutation("Event Settled (Demo)", "Settlement simulated", () => { setSettleDialogOpen(false); setSettlementPrice(''); });
+  const claimMutation = { mutate: (_id: number) => toast({ title: "Payout Claimed (Demo)" }), isPending: false };
+  const withdrawMutation = { mutate: (_id: number) => toast({ title: "Liquidity Withdrawn (Demo)" }), isPending: false };
+  const claimPremiumsMutation = { mutate: (_id: number) => toast({ title: "Premiums Claimed (Demo)" }), isPending: false };
 
   if (!wallet) {
     return (

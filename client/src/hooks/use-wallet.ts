@@ -1,402 +1,99 @@
-import { useState, useEffect, useCallback } from 'react';
-import { walletManager } from '@/lib/wallet';
-import { secureStorage, type StoredWallet, type WalletSettings } from '@/lib/encrypted-storage';
+/**
+ * use-wallet — Demo/dummy hook (no real blockchain integration)
+ * Returns a hardcoded demo wallet state for UI preview purposes.
+ */
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface WalletState {
   isUnlocked: boolean;
-  wallet: StoredWallet | null;
   address: string | null;
+  walletName: string;
   isLoading: boolean;
   error: string | null;
 }
 
+const DEMO_ADDRESS = '0xD3mO1234567890aBcDeF1234567890AbCdEf1234';
+const DEMO_NAME = 'Demo Wallet';
+
 export function useWallet() {
   const [state, setState] = useState<WalletState>({
     isUnlocked: false,
-    wallet: null,
     address: null,
-    isLoading: true,
-    error: null
+    walletName: DEMO_NAME,
+    isLoading: false,
+    error: null,
   });
-
-  const [settings, setSettings] = useState<WalletSettings>(secureStorage.loadSettings());
   const { toast } = useToast();
 
-  // Check wallet status on mount
-  useEffect(() => {
-    checkWalletStatus();
-  }, []);
-
-  // Auto-lock functionality
-  useEffect(() => {
-    if (!settings.autoLock || !state.isUnlocked) return;
-
-    const timeout = setTimeout(() => {
-      lockWallet();
-      toast({
-        title: "Wallet Locked",
-        description: "Your wallet has been automatically locked for security.",
-      });
-    }, settings.autoLockTimeout * 60 * 1000);
-
-    return () => clearTimeout(timeout);
-  }, [state.isUnlocked, settings.autoLock, settings.autoLockTimeout]);
-
-  const checkWalletStatus = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
-    try {
-      let isUnlocked = walletManager.isUnlocked();
-      let address = walletManager.getAddress();
-      let wallet: StoredWallet | null = null;
-
-      // If wallet manager says not unlocked, check persistent state
-      if (!isUnlocked && secureStorage.isWalletUnlocked()) {
-        // Trust the persistent unlock state for UI purposes
-        const unlockedData = secureStorage.getWalletUnlockedData();
-        if (unlockedData) {
-          isUnlocked = true;
-          address = unlockedData.address;
-          // Load wallet data for display (non-sensitive operations only)
-          try {
-            wallet = secureStorage.loadWallet();
-          } catch (error) {
-            // If can't load wallet data, still show as unlocked with basic info
-            wallet = {
-              address: unlockedData.address,
-              name: unlockedData.name,
-              encryptedPrivateKey: '',
-              isImported: false,
-              createdAt: new Date().toISOString()
-            };
-          }
-        }
-      } else if (isUnlocked) {
-        wallet = secureStorage.loadWallet();
-      }
-
-      setState({
-        isUnlocked,
-        wallet,
-        address,
-        isLoading: false,
-        error: null
-      });
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }));
-    }
-  }, []);
-
-  const createWallet = useCallback(async (password: string, name?: string) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
-    try {
-      const wallet = await walletManager.createWallet(password, name);
-      const address = walletManager.getAddress();
-      
-      // Persist wallet unlock state
-      if (wallet) {
-        secureStorage.setWalletUnlocked(wallet);
-      }
-      
-      // Award signup bonus
-      try {
-        // Check if user already has a signup bonus (check point transactions)
-        const transactionsResponse = await fetch(`/api/points/transactions/${wallet.address}`);
-        const transactions = await transactionsResponse.json();
-        const hasSignupBonus = transactions.some((t: any) => t.type === 'signup_bonus');
-        
-        // If no signup bonus exists, award it
-        if (!hasSignupBonus) {
-          const SIGNUP_BONUS = 100;
-          
-          // Get current points to update them
-          const pointsResponse = await fetch(`/api/points/${wallet.address}`);
-          const userPoints = await pointsResponse.json();
-          
-          // Update points to include signup bonus
-          await fetch(`/api/points/${wallet.address}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              points: SIGNUP_BONUS,
-            })
-          });
-          
-          // Create point transaction record
-          await fetch('/api/points/transactions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              walletAddress: wallet.address,
-              type: 'signup_bonus',
-              points: SIGNUP_BONUS,
-              description: 'Welcome bonus for creating an account',
-              referenceId: wallet.address,
-            })
-          });
-        }
-      } catch (apiError) {
-        // Don't block wallet creation if bonus fails
-      }
-      
-      setState({
-        isUnlocked: true,
-        wallet,
-        address,
-        isLoading: false,
-        error: null
-      });
-
-      toast({
-        title: "Wallet Created",
-        description: "Your new wallet has been created successfully.",
-      });
-
-      return wallet;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create wallet';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage
-      }));
-      
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });
-      
-      throw error;
-    }
+  const createWallet = useCallback(async (_password: string, name?: string) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    await new Promise(r => setTimeout(r, 1200));
+    setState({
+      isUnlocked: true,
+      address: DEMO_ADDRESS,
+      walletName: name || DEMO_NAME,
+      isLoading: false,
+      error: null,
+    });
+    toast({ title: 'Wallet Created', description: 'Your demo wallet is ready.' });
+    return { address: DEMO_ADDRESS, name: name || DEMO_NAME };
   }, [toast]);
 
-  const importWallet = useCallback(async (
-    password: string,
-    input: string,
-    type: 'mnemonic' | 'private_key',
-    name?: string
-  ) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
-    try {
-      const wallet = await walletManager.importWallet(password, input, type, name);
-      const address = walletManager.getAddress();
-      
-      // Persist wallet unlock state
-      if (wallet) {
-        secureStorage.setWalletUnlocked(wallet);
-      }
-      
-      // Award signup bonus for imported wallets
-      try {
-        // Check if user already has a signup bonus (check point transactions)
-        const transactionsResponse = await fetch(`/api/points/transactions/${wallet.address}`);
-        const transactions = await transactionsResponse.json();
-        const hasSignupBonus = transactions.some((t: any) => t.type === 'signup_bonus');
-        
-        // If no signup bonus exists, award it
-        if (!hasSignupBonus) {
-          const SIGNUP_BONUS = 100;
-          
-          // Get current points to update them
-          const pointsResponse = await fetch(`/api/points/${wallet.address}`);
-          const userPoints = await pointsResponse.json();
-          
-          // Update points to include signup bonus
-          await fetch(`/api/points/${wallet.address}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              points: SIGNUP_BONUS,
-            })
-          });
-          
-          // Create point transaction record
-          await fetch('/api/points/transactions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              walletAddress: wallet.address,
-              type: 'signup_bonus',
-              points: SIGNUP_BONUS,
-              description: 'Welcome bonus for creating an account',
-              referenceId: wallet.address,
-            })
-          });
-        }
-      } catch (apiError) {
-        // Don't block wallet import if bonus fails
-      }
-      
-      setState({
-        isUnlocked: true,
-        wallet,
-        address,
-        isLoading: false,
-        error: null
-      });
-
-      toast({
-        title: "Wallet Imported",
-        description: "Your wallet has been imported successfully.",
-      });
-
-      return wallet;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to import wallet';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage
-      }));
-      
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });
-      
-      throw error;
-    }
+  const importWallet = useCallback(async (_password: string, _input: string, _type: string, name?: string) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    await new Promise(r => setTimeout(r, 1200));
+    setState({
+      isUnlocked: true,
+      address: DEMO_ADDRESS,
+      walletName: name || DEMO_NAME,
+      isLoading: false,
+      error: null,
+    });
+    toast({ title: 'Wallet Imported', description: 'Your demo wallet has been imported.' });
+    return { address: DEMO_ADDRESS, name: name || DEMO_NAME };
   }, [toast]);
 
-  const unlockWallet = useCallback(async (password: string) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
-    try {
-      const wallet = await walletManager.unlockWallet(password);
-      const address = walletManager.getAddress();
-      
-      // Persist wallet unlock state
-      if (wallet) {
-        secureStorage.setWalletUnlocked(wallet);
-      }
-      
-      setState({
-        isUnlocked: true,
-        wallet,
-        address,
-        isLoading: false,
-        error: null
-      });
-
-      toast({
-        title: "Wallet Unlocked",
-        description: "Welcome back!",
-      });
-
-      return wallet;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to unlock wallet';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage
-      }));
-      
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });
-      
-      throw error;
-    }
+  const unlockWallet = useCallback(async (_password: string) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    await new Promise(r => setTimeout(r, 800));
+    setState({
+      isUnlocked: true,
+      address: DEMO_ADDRESS,
+      walletName: DEMO_NAME,
+      isLoading: false,
+      error: null,
+    });
+    toast({ title: 'Wallet Unlocked', description: 'Welcome back!' });
+    return { address: DEMO_ADDRESS, name: DEMO_NAME };
   }, [toast]);
 
   const lockWallet = useCallback(() => {
-    walletManager.lockWallet();
-    secureStorage.clearWalletUnlocked();
-    setState({
-      isUnlocked: false,
-      wallet: null,
-      address: null,
-      isLoading: false,
-      error: null
-    });
+    setState({ isUnlocked: false, address: null, walletName: DEMO_NAME, isLoading: false, error: null });
   }, []);
 
   const deleteWallet = useCallback(() => {
-    secureStorage.deleteWallet();
-    secureStorage.clearWalletUnlocked();
-    walletManager.lockWallet();
-    setState({
-      isUnlocked: false,
-      wallet: null,
-      address: null,
-      isLoading: false,
-      error: null
-    });
-
-    toast({
-      title: "Wallet Deleted",
-      description: "Your wallet has been permanently deleted.",
-    });
+    setState({ isUnlocked: false, address: null, walletName: DEMO_NAME, isLoading: false, error: null });
+    toast({ title: 'Wallet Deleted', description: 'Your demo wallet has been removed.' });
   }, [toast]);
 
-  const updateSettings = useCallback((newSettings: Partial<WalletSettings>) => {
-    const updatedSettings = { ...settings, ...newSettings };
-    setSettings(updatedSettings);
-    secureStorage.saveSettings(updatedSettings);
-  }, [settings]);
-
-  const exportPrivateKey = useCallback(() => {
-    try {
-      return walletManager.exportPrivateKey();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to export private key",
-      });
-      throw error;
-    }
-  }, [toast]);
-
-  const exportMnemonic = useCallback(() => {
-    try {
-      return walletManager.exportMnemonic();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to export mnemonic",
-      });
-      throw error;
-    }
-  }, [toast]);
-
-  const walletExists = useCallback(() => {
-    return secureStorage.walletExists();
-  }, []);
+  const walletExists = useCallback(() => true, []);
+  const exportPrivateKey = useCallback(() => '0xDEMO_PRIVATE_KEY_NOT_REAL', []);
+  const exportMnemonic = useCallback(() => 'demo word one two three four five six seven eight nine ten eleven twelve', []);
 
   return {
     ...state,
-    settings,
+    wallet: state.isUnlocked ? { address: state.address, name: state.walletName } : null,
+    settings: { selectedNetworkId: 1, autoLock: false, autoLockTimeout: 30 },
     createWallet,
     importWallet,
     unlockWallet,
     lockWallet,
     deleteWallet,
-    updateSettings,
+    walletExists,
     exportPrivateKey,
     exportMnemonic,
-    walletExists,
-    checkWalletStatus
+    checkWalletStatus: async () => { },
+    updateSettings: () => { },
   };
 }

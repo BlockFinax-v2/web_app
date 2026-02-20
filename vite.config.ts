@@ -7,14 +7,6 @@ export default defineConfig({
   plugins: [
     react(),
     runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-      process.env.REPL_ID !== undefined
-      ? [
-        await import("@replit/vite-plugin-cartographer").then((m) =>
-          m.cartographer(),
-        ),
-      ]
-      : []),
   ],
   resolve: {
     dedupe: ["react", "react-dom"],
@@ -30,6 +22,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    port: 5173,
     fs: {
       strict: false,
       allow: [

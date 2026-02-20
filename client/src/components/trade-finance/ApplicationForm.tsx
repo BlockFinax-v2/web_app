@@ -40,9 +40,10 @@ import {
   Handshake
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/api-client";
-import { secureStorage } from "@/lib/encrypted-storage";
-import { getNetworkById } from "@/lib/networks";
-import { usdcManager } from "@/lib/usdc-manager";
+// Dummy replacements for removed blockchain libs
+const secureStorage = { loadSettings: () => ({ selectedNetworkId: 1 }) };
+const getNetworkById = (_id: number) => ({ name: 'Ethereum Mainnet', chainId: 1 });
+const usdcManager = { getUSDCBalance: async (_addr: string, _chain: number) => '12450.00' };
 import {
   FINANCING_TYPE_DESCRIPTIONS,
   fileToBase64,

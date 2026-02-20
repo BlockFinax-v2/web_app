@@ -28,7 +28,8 @@ import {
   Banknote
 } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
-import { getNetworkById } from '@/lib/networks';
+// no real network lib — dummy
+const getNetworkById = (_id: number) => ({ name: 'Ethereum Mainnet', chainId: 1 });
 import { useToast } from '@/hooks/use-toast';
 
 interface TradeFinanceModalProps {

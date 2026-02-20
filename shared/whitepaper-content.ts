@@ -3,7 +3,7 @@ export const whitepaperContent = {
   subtitle: "Democratizing Global Trade Through Trade Finance Guarantee Financing",
   version: "1.0",
   date: "January 2025",
-  
+
   sections: [
     {
       id: "executive-summary",

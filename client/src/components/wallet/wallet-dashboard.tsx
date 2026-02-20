@@ -1,214 +1,84 @@
-import { useState, useEffect } from 'react';
+// Dummy wallet dashboard component — no real blockchain integration
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useTransactions } from '@/hooks/use-transactions';
-import { useWallet } from '@/hooks/use-wallet';
-import { getNetworkById } from '@/lib/networks';
-import { fetchCryptoPrices } from '@/lib/price-service';
-import { SendModal } from './send-modal';
-import { DepositModal } from './deposit-modal';
-import { TradeFinanceModal } from '../trade-finance/trade-finance-modal';
-import { RefreshCw, Send, ArrowDownLeft, Copy, Check } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowUpRight, ArrowDownLeft, TrendingUp } from 'lucide-react';
 
-interface EnhancedWalletOverviewProps {
-  selectedNetworkId: number;
-  className?: string;
-  onTabChange?: (tab: string) => void;
+const DUMMY_BALANCES = [
+  { symbol: 'USDC', name: 'USD Coin', balance: '12,450.00', usdValue: '$12,450.00', change: '+2.3%', positive: true },
+  { symbol: 'ETH', name: 'Ethereum', balance: '3.812', usdValue: '$12,084.36', change: '+5.1%', positive: true },
+  { symbol: 'BTC', name: 'Bitcoin', balance: '0.2841', usdValue: '$18,912.50', change: '-0.8%', positive: false },
+];
+
+interface Props {
+  address: string;
+  networkId?: number;
+  onSend?: () => void;
+  onReceive?: () => void;
 }
 
-export function EnhancedWalletOverview({ selectedNetworkId, className = '', onTabChange }: EnhancedWalletOverviewProps) {
-  const { address } = useWallet();
-  const { 
-    allBalances, 
-    tokenBalances,
-    totalValue, 
-    isLoadingBalance, 
-    formatCurrency, 
-    formatCrypto, 
-    refreshAll 
-  } = useTransactions(selectedNetworkId);
-  
-  const [sendModalOpen, setSendModalOpen] = useState(false);
-  const [depositModalOpen, setDepositModalOpen] = useState(false);
-  const [tradeFinanceModalOpen, setTradeFinanceModalOpen] = useState(false);
-  const [ethPrice, setEthPrice] = useState<number>(3200);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    fetchCryptoPrices().then(prices => {
-      setEthPrice(prices.eth);
-    });
-  }, []);
-
-  const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-
-  const handleCopyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  if (isLoadingBalance) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        <div className="bg-card rounded-xl border p-6">
-          <Skeleton className="h-4 w-24 mb-3" />
-          <Skeleton className="h-10 w-40 mb-2" />
-          <Skeleton className="h-4 w-32" />
-        </div>
-      </div>
-    );
-  }
+export function EnhancedWalletOverview({ address }: Props) {
+  const totalUsd = '$43,446.86';
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Balance Card - Clean minimal design */}
-      <div className="bg-card rounded-xl border p-5 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-muted-foreground font-medium">Total Balance</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={refreshAll}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="mb-5">
-          <div className="text-3xl sm:text-4xl font-semibold tracking-tight mb-1">
-            {formatCurrency(totalValue)}
+    <div className="space-y-6">
+      {/* Total Balance Card */}
+      <Card className="bg-gradient-to-br from-blue-600 to-blue-800 text-white border-0">
+        <CardContent className="p-6">
+          <p className="text-blue-200 text-sm mb-1">Total Portfolio Value</p>
+          <p className="text-4xl font-bold mb-1">{totalUsd}</p>
+          <div className="flex items-center gap-1 text-emerald-300 text-sm">
+            <TrendingUp className="h-4 w-4" />
+            <span>+3.2% this week</span>
           </div>
-          <div className="text-sm text-muted-foreground">
-            {getNetworkById(selectedNetworkId)?.name || 'Network'}
-          </div>
-        </div>
+          <p className="text-blue-300 text-xs mt-3 font-mono">{address}</p>
+        </CardContent>
+      </Card>
 
-        {/* Wallet Address */}
-        {address && (
-          <div 
-            className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
-            onClick={handleCopyAddress}
-          >
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-medium text-primary">{address.slice(2, 4).toUpperCase()}</span>
-            </div>
-            <code className="text-sm text-muted-foreground flex-1">{formatAddress(address)}</code>
-            {copied ? (
-              <Check className="h-4 w-4 text-green-500" />
-            ) : (
-              <Copy className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-3 mt-5">
-          <Button
-            onClick={() => setSendModalOpen(true)}
-            className="h-11"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            Send
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={() => setDepositModalOpen(true)}
-            className="h-11"
-          >
-            <ArrowDownLeft className="h-4 w-4 mr-2" />
-            Receive
-          </Button>
-        </div>
-      </div>
-
-      {/* Token Holdings - Clean list */}
-      <div className="bg-card rounded-xl border">
-        <div className="flex items-center justify-between p-4 border-b">
-          <span className="font-medium">Assets</span>
-          <span className="text-sm text-muted-foreground">
-            {(allBalances.length > 0 ? 1 : 0) + tokenBalances.length} tokens
-          </span>
-        </div>
-        
-        <div className="divide-y divide-border">
-          {/* ETH Balance */}
-          {(() => {
-            const selectedBalance = allBalances.find(b => b.networkId === selectedNetworkId);
-            if (!selectedBalance) return null;
-            
-            return (
-              <div className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <span className="text-lg font-semibold text-slate-600 dark:text-slate-300">Ξ</span>
-                  </div>
-                  <div>
-                    <div className="font-medium">Ethereum</div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatCrypto(selectedBalance.balance, 'ETH')}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">{formatCurrency(selectedBalance.usdValue)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    ${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-          
-          {/* Token Balances */}
-          {tokenBalances.map(({ token, balance, usdValue }: any) => (
-            <div key={token.symbol} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+      {/* Asset List */}
+      <div className="space-y-3">
+        {DUMMY_BALANCES.map(asset => (
+          <Card key={asset.symbol}>
+            <CardContent className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${token.color}15` }}
-                >
-                  <span className="text-lg">{token.icon}</span>
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center font-bold text-blue-600 dark:text-blue-300 text-sm">
+                  {asset.symbol.slice(0, 2)}
                 </div>
                 <div>
-                  <div className="font-medium">{token.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatCrypto(balance, token.symbol, token.decimals === 6 ? 2 : 4)}
-                  </div>
+                  <p className="font-semibold text-sm">{asset.symbol}</p>
+                  <p className="text-xs text-muted-foreground">{asset.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium">{formatCurrency(usdValue)}</div>
-                <div className="text-xs text-muted-foreground">$1.00</div>
+                <p className="font-semibold text-sm">{asset.balance}</p>
+                <p className="text-xs text-muted-foreground">{asset.usdValue}</p>
+                <Badge variant={asset.positive ? 'default' : 'destructive'} className="text-xs mt-0.5">
+                  {asset.change}
+                </Badge>
               </div>
-            </div>
-          ))}
-        </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Modals */}
-      <SendModal
-        isOpen={sendModalOpen}
-        onClose={() => setSendModalOpen(false)}
-        defaultNetworkId={selectedNetworkId}
-      />
-      
-      <DepositModal
-        isOpen={depositModalOpen}
-        onClose={() => setDepositModalOpen(false)}
-      />
-
-      <TradeFinanceModal
-        isOpen={tradeFinanceModalOpen}
-        onClose={() => setTradeFinanceModalOpen(false)}
-        selectedNetworkId={selectedNetworkId}
-      />
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+              <ArrowUpRight className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+            </div>
+            <span className="font-medium text-sm">Send</span>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+              <ArrowDownLeft className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+            </div>
+            <span className="font-medium text-sm">Receive</span>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
