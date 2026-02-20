@@ -353,7 +353,7 @@ export default function Website() {
       ════════════════════════════════════ */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-200 ${scrolled ? "bg-background border-b border-border shadow-sm" : "bg-background"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center h-16 gap-8">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center h-16 gap-4">
             {/* Logo */}
             <Link href="/">
               <div className="flex items-center gap-2 cursor-pointer flex-shrink-0">
@@ -362,8 +362,8 @@ export default function Website() {
               </div>
             </Link>
 
-            {/* Desktop links */}
-            <div className="hidden md:flex items-center gap-1 flex-1">
+            {/* Desktop links — centered in the middle column */}
+            <div className="hidden md:flex items-center justify-center gap-1">
               {[
                 ["Markets", "markets"],
                 ["Trade Finance", "features"],
@@ -382,7 +382,7 @@ export default function Website() {
             </div>
 
             {/* Right side */}
-            <div className="hidden md:flex items-center gap-3 ml-auto">
+            <div className="hidden md:flex items-center gap-3 justify-end">
               <ThemeToggle />
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="text-sm font-medium">Login</Button>
@@ -395,7 +395,7 @@ export default function Website() {
             </div>
 
             {/* Mobile toggle */}
-            <div className="md:hidden ml-auto flex items-center gap-2">
+            <div className="md:hidden flex items-center gap-2 justify-end">
               <ThemeToggle />
               <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-foreground">
                 {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
