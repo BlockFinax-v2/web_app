@@ -34,6 +34,15 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/hooks/use-wallet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Eye, EyeOff, Copy, Download, Lock } from 'lucide-react';
 
 const profileSchema = z.object({
   displayName: z.string().optional(),
@@ -79,6 +88,15 @@ export default function ProfileSettings() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Security & Export State
+  const { exportPrivateKey, exportMnemonic } = useWallet();
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState<'privateKey' | 'mnemonic'>('privateKey');
+  const [exportPassword, setExportPassword] = useState('');
+  const [exportedData, setExportedData] = useState('');
+  const [showExportData, setShowExportData] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -223,6 +241,57 @@ export default function ProfileSettings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleOpenExport = (type: 'privateKey' | 'mnemonic') => {
+    setExportType(type);
+    setExportedData('');
+    setExportPassword('');
+    setShowExportData(false);
+    setExportModalOpen(true);
+  };
+
+  const handleSecureExport = async () => {
+    if (!exportPassword) {
+      toast({ title: "Error", description: "Password is required", variant: "destructive" });
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      if (exportType === 'privateKey') {
+        const privateKey = await exportPrivateKey(exportPassword);
+        setExportedData(privateKey);
+      } else {
+        const mnemonic = await exportMnemonic(exportPassword);
+        if (mnemonic) {
+          setExportedData(mnemonic);
+        } else {
+           toast({
+            variant: "destructive",
+            title: "No Seed Phrase",
+            description: "This wallet was imported using a private key and doesn't have a seed phrase.",
+          });
+          setExportModalOpen(false);
+        }
+      }
+    } catch (error) {
+       toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: "Incorrect password or decryption failed. Please try again.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(exportedData);
+    toast({
+      title: "Copied!",
+      description: `${exportType === 'privateKey' ? 'Private key' : 'Seed phrase'} copied to clipboard.`,
+    });
   };
 
   const getKycStatusIcon = (status: string | null | undefined) => {
@@ -707,6 +776,114 @@ export default function ProfileSettings() {
           </div>
         </form>
       </Form>
+
+      <Separator />
+
+      {/* Security & Backup Settings */}
+      <div className="pt-4 pb-12">
+        <h3 className="text-lg font-medium mb-4 flex items-center space-x-2 text-destructive">
+          <Shield className="h-4 w-4" />
+          <span>Security & Backup</span>
+        </h3>
+        <p className="text-sm text-muted-foreground mb-6 max-w-2xl">
+          These options allow you to export your cryptographic keys. Anyone with these keys can steal your funds. Never share them with anyone, including BlockFinaX staff.
+        </p>
+        
+        <div className="flex flex-wrap gap-4">
+          <Button variant="outline" onClick={() => handleOpenExport('mnemonic')} className="flex items-center gap-2 text-sm font-medium border-destructive/20 hover:bg-destructive/5 hover:text-destructive">
+            <Download className="h-4 w-4" /> Export Seed Phrase
+          </Button>
+          <Button variant="outline" onClick={() => handleOpenExport('privateKey')} className="flex items-center gap-2 text-sm font-medium border-destructive/20 hover:bg-destructive/5 hover:text-destructive">
+            <Upload className="h-4 w-4" /> Export Private Key
+          </Button>
+        </div>
+      </div>
+
+      {/* Secure Export Modal */}
+      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Lock className="h-5 w-5" />
+              <span>Secure Export: {exportType === 'privateKey' ? 'Private Key' : 'Seed Phrase'}</span>
+            </DialogTitle>
+            <DialogDescription>
+              {exportType === 'privateKey' 
+                ? 'Your private key gives full, unconditional access to your wallet.'
+                : 'Your seed phrase can restore your entire wallet on any device.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-semibold text-destructive mb-1">Critical Security Warning</p>
+                  <p className="text-muted-foreground">
+                    Never share this information. We will never ask for it. Anyone who has it controls your assets completely.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {!exportedData ? (
+              <div className="space-y-3 pt-2">
+                <Label htmlFor="export-password">Enter Wallet Password to Decrypt</Label>
+                <Input 
+                  id="export-password" 
+                  type="password" 
+                  autoFocus
+                  placeholder="Your secure password" 
+                  value={exportPassword}
+                  onChange={(e) => setExportPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSecureExport()}
+                />
+              </div>
+            ) : (
+              <div className="space-y-2 pt-2 animate-in fade-in zoom-in duration-300">
+                <div className="text-sm font-medium flex justify-between items-center">
+                  <span>Decrypted {exportType === 'privateKey' ? 'Private Key' : 'Seed Phrase'}</span>
+                  <Badge variant="destructive" className="font-mono text-[10px]">SECRET</Badge>
+                </div>
+                <div className="relative">
+                  <textarea
+                    id="export-data"
+                    className="w-full p-3 bg-zinc-950 text-zinc-50 border border-zinc-800 rounded-lg font-mono text-sm min-h-[100px] resize-none focus:outline-none"
+                    value={showExportData ? exportedData : '•'.repeat(Math.min(exportedData.length, 64))}
+                    readOnly
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="absolute top-2 right-2 h-7 w-7 p-0"
+                    onClick={() => setShowExportData(!showExportData)}
+                  >
+                    {showExportData ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button variant="ghost" onClick={() => setExportModalOpen(false)}>
+              {exportedData ? 'Close' : 'Cancel'}
+            </Button>
+            {!exportedData ? (
+               <Button onClick={handleSecureExport} disabled={!exportPassword || isExporting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {isExporting ? 'Decrypting...' : 'Decrypt Secret'}
+              </Button>
+            ) : (
+              <Button onClick={handleCopyToClipboard} className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white">
+                <Copy className="h-4 w-4" />
+                <span>Copy to Clipboard</span>
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

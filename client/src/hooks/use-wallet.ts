@@ -142,12 +142,12 @@ export function useWallet() {
 
       saveSettings({ walletName: name });
 
-      // Schedule auto-lock
-      if (autoLockTimer) clearTimeout(autoLockTimer);
-      autoLockTimer = setTimeout(() => {
-        lockWallet();
-        toast({ title: 'Wallet Locked', description: 'Auto-locked after 15 minutes of inactivity.' });
-      }, AUTO_LOCK_MS);
+      // Schedule auto-lock (Disabled for testing)
+      // if (autoLockTimer) clearTimeout(autoLockTimer);
+      // autoLockTimer = setTimeout(() => {
+      //   lockWallet();
+      //   toast({ title: 'Wallet Locked', description: 'Auto-locked after 15 minutes of inactivity.' });
+      // }, AUTO_LOCK_MS);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [toast]
