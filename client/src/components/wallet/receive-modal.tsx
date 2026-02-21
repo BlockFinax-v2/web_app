@@ -1,46 +1,60 @@
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { QRCodeComponent } from './qr-code';
-import { Copy, Check } from 'lucide-react';
-import { useWallet } from '@/hooks/use-wallet';
 import { useToast } from '@/hooks/use-toast';
+import { Copy, Share2, Wallet } from 'lucide-react';
+import QRCode from 'qrcode';
 
 interface ReceiveModalProps {
   isOpen: boolean;
   onClose: () => void;
+  address: string;
 }
 
-export function ReceiveModal({ isOpen, onClose }: ReceiveModalProps) {
-  const { address } = useWallet();
+export function ReceiveModal({ isOpen, onClose, address }: ReceiveModalProps) {
   const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
-  const handleCopyAddress = async () => {
-    if (!address) return;
-    
+  useEffect(() => {
+    if (isOpen && address) {
+      QRCode.toDataURL(address, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#0f172a',    // slate-900
+          light: '#ffffff'
+        }
+      })
+      .then(setQrCodeDataUrl)
+      .catch((err) => console.error('Failed to generate QR code', err));
+    }
+  }, [isOpen, address]);
+
+  const copyAddress = async () => {
     try {
+      if (!address) return;
       await navigator.clipboard.writeText(address);
-      setCopied(true);
       toast({
         title: "Address Copied",
-        description: "Wallet address copied to clipboard",
+        description: "Wallet address copied to clipboard"
       });
-      
-      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      toast({
+       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to copy address",
+        description: "Failed to copy address"
       });
+    }
+  };
+
+  const shareAddress = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Wallet Address',
+        text: `Here is my wallet address: ${address}`,
+      }).catch(console.error);
+    } else {
+      copyAddress();
     }
   };
 
@@ -48,75 +62,61 @@ export function ReceiveModal({ isOpen, onClose }: ReceiveModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
-              <i className="fas fa-qrcode text-success text-sm"></i>
-            </div>
-            <span>Receive Crypto</span>
-          </DialogTitle>
+      <DialogContent className="sm:max-w-sm bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl">
+        <DialogHeader className="text-center sm:text-center flex flex-col items-center pt-2">
+          <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-2 shadow-inner">
+            <Wallet className="w-6 h-6 text-blue-500" />
+          </div>
+          <DialogTitle className="text-2xl font-bold">Receive Funds</DialogTitle>
+          <DialogDescription className="text-sm mt-1">
+            Scan the QR code or copy the address below to receive tokens on the supported network.
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* QR Code */}
-          <div className="flex justify-center">
-            <div className="p-4 bg-white rounded-lg border">
-              <QRCodeComponent 
-                value={address}
-                size={200}
-              />
-            </div>
+
+        <div className="flex flex-col items-center space-y-6 py-4">
+          {/* QR Code Container */}
+          <div className="bg-white p-3 rounded-2xl shadow-sm border border-border/50 transition-all hover:scale-105 duration-300">
+            {qrCodeDataUrl ? (
+              <img src={qrCodeDataUrl} alt="Wallet Address QR Code" className="w-48 h-48 sm:w-56 sm:h-56 object-contain" />
+            ) : (
+              <div className="w-48 h-48 sm:w-56 sm:h-56 animate-pulse bg-slate-100 rounded-xl" />
+            )}
           </div>
-          
-          {/* Address */}
-          <div className="space-y-2">
-            <Label htmlFor="address">Your Wallet Address</Label>
-            <div className="flex space-x-2">
-              <Input
-                id="address"
-                value={address}
-                readOnly
-                className="flex-1 font-mono text-sm"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopyAddress}
-                className="shrink-0"
-              >
-                {copied ? (
-                  <Check className="h-4 w-4 text-success" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+
+          <div className="w-full space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+              Your Wallet Address
             </div>
-            <p className="text-sm text-muted-foreground">
-              Send any supported cryptocurrency to this address
-            </p>
-          </div>
-          
-          {/* Warning */}
-          <div className="p-4 bg-warning/5 border border-warning/20 rounded-lg">
-            <div className="flex items-start space-x-2">
-              <i className="fas fa-exclamation-triangle text-warning text-sm mt-0.5"></i>
-              <div className="text-sm">
-                <p className="font-medium text-warning mb-1">Important</p>
-                <p className="text-muted-foreground">
-                  Only send tokens on supported networks to this address. 
-                  Sending tokens on unsupported networks may result in permanent loss.
-                </p>
+            <div 
+              className="relative group cursor-pointer" 
+              onClick={copyAddress}
+            >
+              <div className="w-full p-4 pr-12 bg-muted/50 hover:bg-muted/80 border border-primary/10 rounded-xl font-mono text-sm break-all transition-colors">
+                {address}
+              </div>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground group-hover:text-primary transition-colors">
+                <Copy className="h-5 w-5" />
               </div>
             </div>
           </div>
-          
-          <Button 
-            onClick={onClose}
-            className="w-full"
-          >
-            Done
-          </Button>
+
+          <div className="flex gap-3 w-full pt-2">
+            <Button 
+              variant="outline" 
+              className="w-full h-12 rounded-xl border-primary/20 hover:bg-primary/5 hover:text-primary transition-all font-semibold"
+              onClick={copyAddress}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Address
+            </Button>
+            <Button 
+              className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all font-semibold"
+              onClick={shareAddress}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

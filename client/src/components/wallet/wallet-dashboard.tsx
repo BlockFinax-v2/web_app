@@ -10,6 +10,7 @@ import { NetworkSelector } from '@/components/wallet/network-selector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionHistory } from '@/components/wallet/transaction-history';
 import { SendTransactionModal } from '@/components/wallet/send-transaction-modal';
+import { ReceiveModal } from '@/components/wallet/receive-modal';
 
 // Basic ERC-20 ABI for balance checking
 const ERC20_ABI = [
@@ -33,6 +34,7 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -129,7 +131,11 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
         </div>
         
         <div className="flex flex-col items-center gap-2">
-          <Button size="icon" className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">
+          <Button 
+            onClick={() => setIsReceiveModalOpen(true)}
+            size="icon" 
+            className="h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20"
+          >
             <ArrowDownLeft className="h-6 w-6" />
           </Button>
           <span className="text-xs font-medium">Receive</span>
@@ -253,6 +259,12 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
         networkId={networkId.toString()} 
         address={address} 
         assets={ASSETS}
+      />
+      
+      <ReceiveModal
+        isOpen={isReceiveModalOpen}
+        onClose={() => setIsReceiveModalOpen(false)}
+        address={address}
       />
     </div>
   );
