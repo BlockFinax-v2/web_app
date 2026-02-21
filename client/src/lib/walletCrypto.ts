@@ -31,7 +31,7 @@ export function generatePrivateKey(): string {
  */
 export async function deriveAddressFromPrivateKey(privateKey: string): Promise<string> {
     const keyBytes = hexToBytes(privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", keyBytes as BufferSource);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", keyBytes as any);
     const hashBytes = new Uint8Array(hashBuffer);
     // Take last 20 bytes as the address (Ethereum-style)
     const addrBytes = hashBytes.slice(12);
@@ -130,7 +130,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
     return crypto.subtle.deriveKey(
         {
             name: "PBKDF2",
-            salt: salt as BufferSource,
+            salt: salt as any,
             iterations: PBKDF2_ITERATIONS,
             hash: "SHA-256",
         },
@@ -193,9 +193,9 @@ export async function decryptPrivateKey(
 
     try {
         const decryptedBuffer = await crypto.subtle.decrypt(
-            { name: KEY_ALGORITHM, iv },
+            { name: KEY_ALGORITHM, iv: iv as any },
             key,
-            ciphertext as BufferSource
+            ciphertext as any
         );
         return new TextDecoder().decode(decryptedBuffer);
     } catch {
