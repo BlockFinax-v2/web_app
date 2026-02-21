@@ -117,7 +117,7 @@ export function SendTransactionModal({ isOpen, onClose, networkId, address, asse
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl overflow-y-auto max-h-[85vh]">
+      <DialogContent className="sm:max-w-md bg-card/95 border-border/50">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             Send Payment

@@ -62,7 +62,7 @@ export function ReceiveModal({ isOpen, onClose, address }: ReceiveModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-sm bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl">
+      <DialogContent className="sm:max-w-sm bg-card/95 border-border/50">
         <DialogHeader className="text-center sm:text-center flex flex-col items-center pt-2">
           <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-2 shadow-inner">
             <Wallet className="w-6 h-6 text-blue-500" />
