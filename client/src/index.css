@@ -89,6 +89,11 @@
 @layer base {
   * {
     @apply border-border;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
   }
 
   body {
@@ -102,14 +107,6 @@
 
   html {
     scroll-behavior: smooth;
-    scrollbar-width: none;
-    /* Firefox */
-  }
-
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari, Edge */
   }
 
   h1,

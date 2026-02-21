@@ -161,7 +161,7 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
         {/* Tab Headers */}
         <div className="border-b border-border/50 px-2 flex mb-4">
           <TabsList className="bg-transparent p-0 justify-start gap-4 sm:gap-6 h-auto w-full overflow-x-auto no-scrollbar">
-            {['Tokens', 'DeFi', 'NFTs', 'Activity'].map((tabValue) => (
+            {['Tokens', 'Activity'].map((tabValue) => (
               <TabsTrigger 
                 key={tabValue}
                 value={tabValue.toLowerCase()} 
@@ -226,27 +226,6 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
           
         </TabsContent>
 
-        {/* Placeholders for other tabs */}
-        <TabsContent value="defi" className="m-0 focus-visible:outline-none">
-          <div className="py-12 text-center flex flex-col items-center justify-center">
-             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4 text-muted-foreground">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-             </div>
-             <h3 className="text-lg font-semibold">No DeFi Positions</h3>
-             <p className="text-sm text-muted-foreground max-w-xs mt-2">Explore the ecosystem to start earning yield.</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="nfts" className="m-0 focus-visible:outline-none">
-          <div className="py-12 text-center flex flex-col items-center justify-center">
-             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4 text-muted-foreground">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-             </div>
-             <h3 className="text-lg font-semibold">No NFTs yet</h3>
-             <p className="text-sm text-muted-foreground max-w-xs mt-2">Learn more about digital collectibles.</p>
-          </div>
-        </TabsContent>
-        
         <TabsContent value="activity" className="m-0 focus-visible:outline-none">
           <TransactionHistory networkId={networkId} address={address} />
         </TabsContent>
