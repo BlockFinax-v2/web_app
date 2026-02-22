@@ -213,10 +213,9 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
                   </div>
                   <div className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {loading && asset.isReal 
-                        ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" /> 
-                        : <p className="font-semibold text-base">{asset.balance}</p>
-                      }
+                      <p className={`font-semibold text-base transition-opacity duration-300 ${loading && asset.isReal ? 'opacity-50' : 'opacity-100'}`}>
+                        {asset.balance}
+                      </p>
                     </div>
                     <p className="text-sm text-muted-foreground">{asset.usdValue}</p>
                   </div>
