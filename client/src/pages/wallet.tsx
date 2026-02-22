@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Wallet() {
   const [, setLocation] = useLocation();
-  const { isUnlocked, settings, walletExists, isLoading, wallet } = useWallet();
+  const { isUnlocked, settings, walletExists, isLoading, wallet, updateSettings } = useWallet();
   const selectedNetworkId = settings.selectedNetworkId;
   const { toast } = useToast();
 
@@ -42,6 +42,7 @@ export default function Wallet() {
         address={wallet?.address || ""}
         networkId={selectedNetworkId}
         onTabChange={() => {}}
+        onNetworkChange={(id) => updateSettings({ selectedNetworkId: id })}
       />
       
       </div>

@@ -26,9 +26,10 @@ interface Props {
   onSend?: () => void;
   onReceive?: () => void;
   onTabChange?: (tab: string) => void;
+  onNetworkChange?: (id: number) => void;
 }
 
-export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
+export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange }: Props) {
   const [balanceETH, setBalanceETH] = useState<string>("0.00");
   const [usdcBalance, setUSDCBalance] = useState<string>("0.00");
   const [loading, setLoading] = useState(true);
@@ -177,7 +178,7 @@ export function EnhancedWalletOverview({ address, networkId = 84532 }: Props) {
         <TabsContent value="tokens" className="m-0 focus-visible:outline-none space-y-4">
           
           <div className="flex items-center justify-between px-2">
-            <NetworkSelector selectedNetworkId={networkId} onNetworkChange={() => {}} />
+            <NetworkSelector selectedNetworkId={networkId} onNetworkChange={onNetworkChange} />
             
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">

@@ -32,7 +32,7 @@ function getTokenColor(symbol: string) {
       case "BNB": return "bg-yellow-500";
       case "MATIC": return "bg-purple-500";
       case "AVAX": return "bg-red-500";
-      default: return "bg-zinc-700";
+      default: return "bg-muted text-foreground border border-border";
     }
 }
 
@@ -75,12 +75,12 @@ export function TokenSelector({ assets, selectedSymbol, onSelect }: TokenSelecto
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[400px] p-0 bg-zinc-950 border-zinc-800 text-zinc-50 rounded-2xl overflow-hidden gap-0 max-h-[85vh]">
-        <DialogHeader className="p-4 border-b border-zinc-900 relative">
-          <DialogTitle className="text-center text-lg font-semibold text-zinc-50">Select a token</DialogTitle>
+      <DialogContent className="sm:max-w-[400px] p-0 bg-card/95 border-border/50 text-foreground rounded-2xl overflow-hidden gap-0 max-h-[85vh]">
+        <DialogHeader className="p-4 border-b border-border/50 relative">
+          <DialogTitle className="text-center text-lg font-semibold text-foreground">Select a token</DialogTitle>
           <button 
             onClick={() => setOpen(false)}
-            className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-100 transition-colors"
+            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -88,47 +88,47 @@ export function TokenSelector({ assets, selectedSymbol, onSelect }: TokenSelecto
 
         <div className="px-4 pt-4 pb-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input 
               type="text" 
               placeholder="Search tokens..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-zinc-700 transition-colors"
+              className="w-full bg-background/50 border border-border/50 rounded-lg pl-9 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-border transition-colors"
             />
           </div>
         </div>
 
         <div className="px-5 py-2">
-           <span className="text-xs font-semibold text-zinc-400">Your Assets</span>
+           <span className="text-xs font-semibold text-muted-foreground">Your Assets</span>
         </div>
 
         <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1">
           {filteredAssets.length === 0 ? (
-             <div className="py-8 text-center text-zinc-500 text-sm">No tokens found.</div>
+             <div className="py-8 text-center text-muted-foreground text-sm">No tokens found.</div>
           ) : (
             filteredAssets.map((asset) => (
               <button
                 key={asset.symbol}
                 onClick={() => handleSelect(asset.symbol)}
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-900 transition-colors text-left group relative"
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left group relative"
               >
                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-inner", getTokenColor(asset.symbol))}>
                   <span className="text-sm font-bold text-white uppercase">{asset.symbol.slice(0,2)}</span>
                 </div>
                 
                 <div className="flex-1 overflow-hidden flex flex-col justify-center">
-                  <p className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                     {asset.symbol}
                     {selectedSymbol === asset.symbol && <Check className="h-4 w-4 text-blue-500" />}
                   </p>
-                  <p className="text-xs text-zinc-500 truncate">{asset.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{asset.name}</p>
                 </div>
 
                 <div className="text-right flex flex-col justify-center">
-                  <span className="font-semibold text-sm text-zinc-200">{asset.balance}</span>
+                  <span className="font-semibold text-sm text-foreground">{asset.balance}</span>
                   {hasValue(asset.usdValue) && (
-                    <span className="text-xs text-zinc-500">{asset.usdValue}</span>
+                    <span className="text-xs text-muted-foreground">{asset.usdValue}</span>
                   )}
                 </div>
               </button>

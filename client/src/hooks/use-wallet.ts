@@ -53,6 +53,7 @@ export interface WalletState {
   smartAccountAddress: string | null;
   isSmartAccountEnabled: boolean;
   isSmartAccountInitialized: boolean;
+  selectedNetworkId: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ const DEFAULT_STATE: WalletState = {
   smartAccountAddress: null,
   isSmartAccountEnabled: true,
   isSmartAccountInitialized: false,
+  selectedNetworkId: 1,
 };
 
 // ─── Module-Level State ──────────────────────────────────────
@@ -162,7 +164,7 @@ export function useWallet() {
     const exists = hasWalletStored();
     const storedAddr = getStoredAddress();
     const storedSA = getStoredSmartAccountAddress();
-    const savedSettings = getSettings<{ walletName?: string }>();
+    const savedSettings = getSettings<{ walletName?: string; selectedNetworkId?: number }>();
 
     setState((prev) => ({
       ...prev,
@@ -170,6 +172,7 @@ export function useWallet() {
       address: exists && storedAddr ? storedAddr : null,
       smartAccountAddress: exists && storedSA ? storedSA : null,
       walletName: savedSettings?.walletName || 'My Wallet',
+      selectedNetworkId: savedSettings?.selectedNetworkId || 1,
     }));
   }, []);
 
@@ -297,11 +300,14 @@ export function useWallet() {
   // ── Update Settings ──────────────────────────────────────────────────
 
   const updateSettings = useCallback(
-    (updates: Partial<{ walletName: string }>) => {
+    (updates: Partial<{ walletName: string; selectedNetworkId: number }>) => {
       const current = getSettings<Record<string, unknown>>() ?? {};
       saveSettings({ ...current, ...updates });
       if (updates.walletName) {
         setState((prev) => ({ ...prev, walletName: updates.walletName! }));
+      }
+      if (updates.selectedNetworkId) {
+        setState((prev) => ({ ...prev, selectedNetworkId: updates.selectedNetworkId! }));
       }
     },
     []
@@ -327,7 +333,7 @@ export function useWallet() {
     // State
     ...state,
     wallet: state.isUnlocked ? { address: state.address, name: state.walletName } : null,
-    settings: { selectedNetworkId: 84532, autoLock: true, autoLockTimeout: 15 },
+    settings: { selectedNetworkId: state.selectedNetworkId, autoLock: true, autoLockTimeout: 15 },
 
     // Methods
     createWallet,
