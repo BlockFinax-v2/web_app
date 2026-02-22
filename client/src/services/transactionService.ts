@@ -148,7 +148,11 @@ export class TransactionService {
     }
 
     private async sendViaAA(params: TransactionParams, alchemyNetworkId: string, networkConfig: any): Promise<TransactionResult> {
-        console.log('[TransactionService Web] 🚀 STARTING AA TRANSACTION');
+        console.log('[TransactionService Web] ═══════════════════════════════════════');
+        console.log('[TransactionService Web] 🚀 STARTING AA TRANSACTION (GASLESS)');
+        console.log(`[TransactionService Web] Network: ${networkConfig.name}`);
+        console.log(`[TransactionService Web] Amount: ${params.amount} ${params.tokenAddress ? 'ERC-20' : 'NATIVE'}`);
+        console.log('[TransactionService Web] ═══════════════════════════════════════');
         try {
             if (!params.password) throw new Error("Password required for AA transaction");
 
@@ -196,13 +200,25 @@ export class TransactionService {
             };
 
         } catch (error: any) {
-            console.error("[TransactionService Web] ❌ AA transaction failed, falling back to EOA", error);
-            return this.sendViaEOA(params, alchemyNetworkId, networkConfig);
+            console.error("[TransactionService Web] ═══════════════════════════════════════");
+            console.error("[TransactionService Web] ❌ AA TRANSACTION FAILED!");
+            console.error(`[TransactionService Web] Error Type: ${error?.constructor?.name || 'Unknown'}`);
+            console.error(`[TransactionService Web] Message: ${error?.message || 'No message provided'}`);
+            console.error("[TransactionService Web] ═══════════════════════════════════════");
+            console.log("[TransactionService Web] 🔄 Initiating seamless fallback to EOA...");
+            return this.sendViaEOA(params, alchemyNetworkId, networkConfig, error?.message || 'Unknown AA Error');
         }
     }
 
-    private async sendViaEOA(params: TransactionParams, _alchemyNetworkId: string, networkConfig: any): Promise<TransactionResult> {
-        console.log('[TransactionService Web] 🚀 STARTING EOA TRANSACTION');
+    private async sendViaEOA(params: TransactionParams, _alchemyNetworkId: string, networkConfig: any, fallbackReason?: string): Promise<TransactionResult> {
+        console.log('[TransactionService Web] ═══════════════════════════════════════');
+        if (fallbackReason) {
+            console.log(`[TransactionService Web] 🔄 FALLBACK TO EOA TRANSACTION`);
+            console.log(`[TransactionService Web] Reason: ${fallbackReason}`);
+        } else {
+            console.log('[TransactionService Web] 🚀 STARTING DIRECT EOA TRANSACTION');
+        }
+        console.log('[TransactionService Web] ═══════════════════════════════════════');
 
         // Quick validation
         if (!isValidAddress(params.recipientAddress)) throw new Error("Invalid recipient address");

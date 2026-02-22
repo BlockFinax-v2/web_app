@@ -20,6 +20,21 @@ const POPULAR_NETWORKS = [
   { id: 84532, name: 'Base Sepolia', symbol: 'ETH', icon: 'bg-muted' },
 ];
 
+const ADDITIONAL_NETWORKS = [
+  { id: 9001, name: 'HyperEVM', symbol: 'EVM', icon: 'bg-emerald-400' },
+  { id: 9002, name: 'MegaETH', symbol: 'METH', icon: 'bg-slate-300 text-black' },
+  { id: 9003, name: 'Monad', symbol: 'MONAD', icon: 'bg-indigo-500' },
+];
+
+const EXTRA_NETWORKS = [
+  { id: 42161, name: 'Arbitrum One', symbol: 'ETH', icon: 'bg-blue-400 text-white' },
+  { id: 10, name: 'OP Mainnet', symbol: 'ETH', icon: 'bg-red-500 text-white' },
+  { id: 137, name: 'Polygon Mainnet', symbol: 'MATIC', icon: 'bg-purple-500 text-white' },
+  { id: 43114, name: 'Avalanche C-Chain', symbol: 'AVAX', icon: 'bg-red-600 text-white' },
+  { id: 56, name: 'BNB Smart Chain', symbol: 'BNB', icon: 'bg-yellow-500 text-white' },
+  { id: 59144, name: 'Linea', symbol: 'ETH', icon: 'bg-gray-800 text-white' },
+];
+
 const CUSTOM_NETWORKS: typeof POPULAR_NETWORKS = [];
 
 interface Props { 
@@ -31,17 +46,38 @@ export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange }: Prop
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("popular");
   const [isAddingNetwork, setIsAddingNetwork] = useState(false);
+  const [showAllNetworks, setShowAllNetworks] = useState(false);
+
+  const [addedNetworkIds, setAddedNetworkIds] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem('blockfinax.wallet.addedNetworks') || '[]'); } catch { return []; }
+  });
+
+  const ALL_EXTRAS = [...ADDITIONAL_NETWORKS, ...EXTRA_NETWORKS];
+  const activeExtras = ALL_EXTRAS.filter(n => addedNetworkIds.includes(n.id));
+  const inactiveExtras = ALL_EXTRAS.filter(n => !addedNetworkIds.includes(n.id));
 
   // Determine active network
-  const current = [...POPULAR_NETWORKS, ...CUSTOM_NETWORKS].find(n => n.id === selectedNetworkId) || POPULAR_NETWORKS[0];
+  const current = [...POPULAR_NETWORKS, ...ALL_EXTRAS, ...CUSTOM_NETWORKS].find(n => n.id === selectedNetworkId) || POPULAR_NETWORKS[0];
 
   const handleSelect = (id: number) => {
+    if (ALL_EXTRAS.some(n => n.id === id)) {
+      if (!addedNetworkIds.includes(id)) {
+        const updated = [...addedNetworkIds, id];
+        setAddedNetworkIds(updated);
+        localStorage.setItem('blockfinax.wallet.addedNetworks', JSON.stringify(updated));
+      }
+    }
     onNetworkChange?.(id);
     setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(val) => {
+      setOpen(val);
+      if (!val) {
+        setIsAddingNetwork(false);
+      }
+    }}>
       <DialogTrigger asChild>
         <button className="flex items-center gap-2 hover:bg-muted/50 px-3 py-1.5 rounded-full transition-colors border border-border/50 bg-background shadow-sm group">
           <Globe className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -66,15 +102,6 @@ export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange }: Prop
           ) : (
             <DialogTitle className="text-center text-lg font-semibold text-foreground">Select a network</DialogTitle>
           )}
-          <button 
-            onClick={() => {
-              setOpen(false);
-              setIsAddingNetwork(false);
-            }}
-            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </DialogHeader>
 
         {isAddingNetwork ? (
@@ -169,37 +196,108 @@ export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange }: Prop
                 <TabsContent value="popular" className="m-0 focus-visible:outline-none">
                   <div className="flex flex-col gap-1">
                     <button 
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer text-left group"
+                      onClick={() => setShowAllNetworks(prev => !prev)}
+                      className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer text-left group w-full"
                     >
-                      <div className="w-8 h-8 rounded-full bg-transparent border border-border flex items-center justify-center shrink-0">
-                         <Globe className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-transparent border border-border flex items-center justify-center shrink-0">
+                           <Globe className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="text-sm font-medium text-foreground">All popular networks</p>
+                        </div>
                       </div>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="text-sm font-medium text-foreground">All popular networks</p>
-                      </div>
+                      <ChevronLeft className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", showAllNetworks ? "-rotate-90" : "rotate-180")} />
                     </button>
 
-                    {POPULAR_NETWORKS.map((network) => (
+                    {showAllNetworks && (
+                      <div className="pl-4 pr-0 border-l border-border/50 ml-4 space-y-1 mb-2">
+                        {inactiveExtras.map((network) => (
+                           <button 
+                             key={network.id}
+                             onClick={() => handleSelect(network.id)}
+                             className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors text-left group w-full relative"
+                           >
+                             <div className={cn("w-6 h-6 rounded flex items-center justify-center shrink-0 shadow-inner overflow-hidden", network.icon)}>
+                               {network.name[0]}
+                             </div>
+                             <div className="flex-1 overflow-hidden">
+                               <p className="text-xs font-semibold text-foreground flex items-center gap-2">
+                                 {network.name}
+                               </p>
+                             </div>
+                             <div className="shrink-0 text-muted-foreground hover:text-foreground">
+                               <Plus className="h-3 w-3" />
+                             </div>
+                           </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Rendering Added Extra Networks below popular gracefully */}
+                    {activeExtras.map((network) => (
                       <button 
                         key={network.id}
                         onClick={() => handleSelect(network.id)}
                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left group relative"
                       >
-                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-inner", network.icon)}>
-                          <span className="text-[10px] font-bold text-white uppercase">{network.symbol.slice(0,1)}</span>
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-inner overflow-hidden", network.icon)}>
+                           {network.id === 9001 ? (
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" fillOpacity="0.8"/><path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                           ) : network.id === 9002 ? (
+                              <span className="text-xs font-bold uppercase tracking-tighter">M</span>
+                           ) : (
+                              <span className="text-xs font-bold uppercase tracking-tighter">{network.name.slice(0,2)}</span>
+                           )}
                         </div>
                         <div className="flex-1 overflow-hidden flex flex-col justify-center">
                           <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                             {network.name}
                             {selectedNetworkId === network.id && <Check className="h-3.5 w-3.5 text-blue-500" />}
                           </p>
-                          {network.sub && <p className="text-xs text-muted-foreground truncate">{network.sub}</p>}
                         </div>
                         <div className="shrink-0 text-muted-foreground hover:text-foreground p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <MoreVertical className="h-4 w-4" />
                         </div>
                       </button>
                     ))}
+                    
+                    {inactiveExtras.filter(n => ADDITIONAL_NETWORKS.some(an => an.id === n.id)).length > 0 && (
+                      <div className="pt-4 pb-2 px-2 flex items-center gap-2 text-muted-foreground">
+                        <p className="text-sm font-semibold">Additional networks</p>
+                        <div className="w-4 h-4 rounded-full border border-muted-foreground flex items-center justify-center cursor-help">
+                          <span className="text-[10px]">i</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {inactiveExtras.filter(n => ADDITIONAL_NETWORKS.some(an => an.id === n.id)).map((network) => (
+                      <button 
+                        key={network.id}
+                        onClick={() => handleSelect(network.id)}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left group relative"
+                      >
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-inner overflow-hidden", network.icon)}>
+                           {network.id === 9001 ? (
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" fillOpacity="0.8"/><path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                           ) : network.id === 9002 ? (
+                              <span className="text-xs font-bold uppercase tracking-tighter">M</span>
+                           ) : (
+                              <div className="w-4 h-4 rounded-full border-2 border-white/80"></div>
+                           )}
+                        </div>
+                        <div className="flex-1 overflow-hidden flex flex-col justify-center">
+                          <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            {network.name}
+                            {selectedNetworkId === network.id && <Check className="h-3.5 w-3.5 text-blue-500" />}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-muted-foreground hover:text-foreground p-1 transition-opacity">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                      </button>
+                    ))}
+
                   </div>
                 </TabsContent>
 
@@ -251,3 +349,4 @@ export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange }: Prop
     </Dialog>
   );
 }
+// Force HMR reload

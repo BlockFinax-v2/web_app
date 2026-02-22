@@ -7,10 +7,18 @@ import { NETWORK_CONFIGS } from '@/config/alchemyAccount';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { NetworkSelector } from '@/components/wallet/network-selector';
+import { TokenIcon } from '@/components/wallet/token-selector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionHistory } from '@/components/wallet/transaction-history';
 import { SendTransactionModal } from '@/components/wallet/send-transaction-modal';
 import { ReceiveModal } from '@/components/wallet/receive-modal';
+
+// Basic cache keys for the dashboard balances
+const CACHE_KEYS = {
+  ETH_BALANCE: 'blockfinax.dashboard.balanceETH',
+  USDC_BALANCE: 'blockfinax.dashboard.balanceUSDC',
+  INTERACTED_TOKENS: 'blockfinax.dashboard.interactedTokens'
+};
 
 // Basic ERC-20 ABI for balance checking
 const ERC20_ABI = [
@@ -30,12 +38,24 @@ interface Props {
 }
 
 export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange }: Props) {
-  const [balanceETH, setBalanceETH] = useState<string>("0.00");
-  const [usdcBalance, setUSDCBalance] = useState<string>("0.00");
+  // Initialize from cache immediately to prevent 0.00 flash
+  const [balanceETH, setBalanceETH] = useState<string>(() => localStorage.getItem(CACHE_KEYS.ETH_BALANCE) || "0.00");
+  const [usdcBalance, setUSDCBalance] = useState<string>(() => localStorage.getItem(CACHE_KEYS.USDC_BALANCE) || "0.00");
+  const [interactedTokens, setInteractedTokens] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEYS.INTERACTED_TOKENS) || '[]'); } catch { return []; }
+  });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+
+  const handleTransactionComplete = (symbol: string, amount: string) => {
+    if (!interactedTokens.includes(symbol)) {
+      const updated = [...interactedTokens, symbol];
+      setInteractedTokens(updated);
+      localStorage.setItem(CACHE_KEYS.INTERACTED_TOKENS, JSON.stringify(updated));
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -51,7 +71,11 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
           
           // Fetch Native Balance
           const balanceWei = await provider.getBalance(address);
-          if (isMounted) setBalanceETH(parseFloat(ethers.formatEther(balanceWei)).toFixed(4));
+          if (isMounted) {
+            const formattedEth = parseFloat(ethers.formatEther(balanceWei)).toFixed(4);
+            setBalanceETH(formattedEth);
+            localStorage.setItem(CACHE_KEYS.ETH_BALANCE, formattedEth);
+          }
 
           // Fetch USDC Balance (if known, trying Base Sepolia USDC first, or general)
           // Look up USDC address in config 
@@ -64,9 +88,16 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
               const contract = new ethers.Contract(usdcAddress, ERC20_ABI, provider);
               const bal = await contract.balanceOf(address);
               const dec = await contract.decimals();
-              if (isMounted) setUSDCBalance(parseFloat(ethers.formatUnits(bal, dec)).toFixed(2));
+              if (isMounted) {
+                const formattedUSDC = parseFloat(ethers.formatUnits(bal, dec)).toFixed(2);
+                setUSDCBalance(formattedUSDC);
+                localStorage.setItem(CACHE_KEYS.USDC_BALANCE, formattedUSDC);
+              }
           } else {
-              if (isMounted) setUSDCBalance("0.00");
+              if (isMounted) {
+                setUSDCBalance("0.00");
+                localStorage.setItem(CACHE_KEYS.USDC_BALANCE, "0.00");
+              }
           }
         }
       } catch (err) {
@@ -93,9 +124,68 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
   const ASSETS = [
     { symbol: nativeSymbol, name: currentNetwork?.name || 'Ethereum', balance: balanceETH, usdValue: '$0.00', change: '+0.0%', positive: true, isReal: true },
     { symbol: 'USDC', name: 'USD Coin', balance: usdcBalance, usdValue: '$0.00', change: '+0.0%', positive: true, isReal: true },
+    { symbol: 'USDT', name: 'Tether', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'DAI', name: 'Dai Stablecoin', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'LINK', name: 'Chainlink', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'UNI', name: 'Uniswap', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'WETH', name: 'Wrapped Ether', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'WBTC', name: 'Wrapped Bitcoin', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'MATIC', name: 'Polygon', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'ARB', name: 'Arbitrum', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'OP', name: 'Optimism', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'SHIB', name: 'Shiba Inu', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'PEPE', name: 'Pepe', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'AAVE', name: 'Aave', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'CRV', name: 'Curve DAO', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'COMP', name: 'Compound', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'MKR', name: 'Maker', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'FRAX', name: 'Frax', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'LDO', name: 'Lido DAO', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'SNX', name: 'Synthetix', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'STETH', name: 'Lido Staked ETH', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'TON', name: 'Toncoin', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'DOT', name: 'Polkadot', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'TRX', name: 'TRON', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'ADA', name: 'Cardano', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'AVAX', name: 'Avalanche', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'BCH', name: 'Bitcoin Cash', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'XLM', name: 'Stellar', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'NEAR', name: 'NEAR Protocol', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'APT', name: 'Aptos', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'INJ', name: 'Injective', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'FIL', name: 'Filecoin', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'ICP', name: 'Internet Computer', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'RNDR', name: 'Render', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
+    { symbol: 'TIA', name: 'Celestia', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
   ];
 
-  const totalUsd = '$0.00';
+  // Tokens that have balances, are defaults, or were specifically interacted with
+  const dashboardVisibleAssets = ASSETS.filter(a => 
+    parseFloat(a.balance) > 0 || 
+    [nativeSymbol, 'USDC'].includes(a.symbol) || 
+    interactedTokens.includes(a.symbol)
+  ).map(a => {
+    // Inject mock prices for realistic view
+    let price = 0;
+    if (['ETH', 'WETH'].includes(a.symbol)) price = 3105.20;
+    else if (['USDC', 'USDT', 'DAI'].includes(a.symbol)) price = 1.0;
+    else if (['BTC', 'WBTC'].includes(a.symbol)) price = 64230.10;
+    else if (a.symbol === 'SOL') price = 145.20;
+    else price = 15.40; // generic mock price
+
+    const balNum = parseFloat(a.balance || '0');
+    const val = balNum * price;
+    return {
+      ...a,
+      usdValue: val > 0 ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val) : '$0.00',
+      _rawVal: val
+    };
+  });
+
+  const totalValueNum = dashboardVisibleAssets.reduce((acc, a) => acc + (a._rawVal || 0), 0);
+  const totalUsd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalValueNum);
+  const todayChange = totalValueNum * 0.032; // Mock 3.2% daily change based on total balance
+  const isPositive = todayChange >= 0;
 
   return (
     <div className="space-y-6">
@@ -113,8 +203,8 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2 text-foreground">
           {totalUsd}
         </h1>
-        <p className="text-sm font-medium text-emerald-500">
-          +$1,346.20 (3.2%) Today
+        <p className={`text-sm font-medium ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+          {isPositive ? '+' : ''}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(todayChange)} (3.2%) Today
         </p>
       </div>
 
@@ -192,17 +282,15 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
 
           <Card className="rounded-2xl overflow-hidden border-border/50 shadow-sm bg-card/50">
             <div className="flex flex-col">
-              {ASSETS.map((asset, index) => (
+              {dashboardVisibleAssets.map((asset, index) => (
                 <div 
                   key={asset.symbol} 
                   className={`p-4 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer ${
-                    index !== ASSETS.length - 1 ? 'border-b border-border/50' : ''
+                    index !== dashboardVisibleAssets.length - 1 ? 'border-b border-border/50' : ''
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
-                      {asset.symbol.slice(0, 2)}
-                    </div>
+                    <TokenIcon symbol={asset.symbol} className="w-10 h-10" />
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-base">{asset.symbol}</p>
@@ -235,9 +323,11 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
       <SendTransactionModal 
         isOpen={isSendModalOpen} 
         onClose={() => setIsSendModalOpen(false)} 
-        networkId={networkId.toString()} 
+        networkId={networkId} 
+        onNetworkChange={onNetworkChange || (() => {})}
         address={address} 
         assets={ASSETS}
+        onTransactionComplete={handleTransactionComplete}
       />
       
       <ReceiveModal
