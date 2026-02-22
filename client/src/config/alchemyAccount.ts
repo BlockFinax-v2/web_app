@@ -140,7 +140,8 @@ export function getAlchemyGasPolicyId(): string | undefined {
     return import.meta.env.VITE_ALCHEMY_GAS_POLICY_ID;
 }
 
-export const NETWORK_CONFIGS: Record<string, any> = {
+export const NETWORK_CONFIGS: Record<string | number, any> = {
+    // String Keys for legacy generic lookups
     lisk_sepolia: {
         name: 'Lisk Sepolia',
         chainId: 4202,
@@ -149,11 +150,23 @@ export const NETWORK_CONFIGS: Record<string, any> = {
         isTestnet: true,
         nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
     },
+    // Number Keys matching chainIds exactly to ensure correct rendering in Dashboard
+    1: { name: 'Ethereum Mainnet', symbol: 'ETH', isTestnet: false, chainId: 1, rpcUrl: 'https://eth.llamarpc.com' },
+    11155111: { name: 'Sepolia', symbol: 'SepoliaETH', isTestnet: true, chainId: 11155111, rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com' },
+    8453: { name: 'Base', symbol: 'ETH', isTestnet: false, chainId: 8453, rpcUrl: 'https://mainnet.base.org' },
+    84532: { name: 'Base Sepolia', symbol: 'ETH', isTestnet: true, chainId: 84532, rpcUrl: 'https://sepolia.base.org' },
+    10: { name: 'OP Mainnet', symbol: 'ETH', isTestnet: false, chainId: 10, rpcUrl: 'https://mainnet.optimism.io' },
+    42161: { name: 'Arbitrum One', symbol: 'ETH', isTestnet: false, chainId: 42161, rpcUrl: 'https://arb1.arbitrum.io/rpc' },
+    1135: { name: 'Lisk', symbol: 'ETH', isTestnet: false, chainId: 1135, rpcUrl: 'https://rpc.api.lisk.com' },
+    4202: { name: 'Lisk Sepolia', symbol: 'ETH', isTestnet: true, chainId: 4202, rpcUrl: 'https://rpc.sepolia-api.lisk.com' },
 };
 
-export function getNetworkConfig(network: string) {
+export function getNetworkConfig(network: string | number) {
     const config = NETWORK_CONFIGS[network];
-    if (!config) throw new Error(`Network ${network} configuration not found`);
+    if (!config) {
+        // Fallback for unknown networks
+        return { name: 'Unknown Network', symbol: 'ETH', isTestnet: false };
+    }
     return config;
 }
 

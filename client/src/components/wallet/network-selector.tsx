@@ -195,6 +195,28 @@ export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange }: Prop
               <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
                 <TabsContent value="popular" className="m-0 focus-visible:outline-none">
                   <div className="flex flex-col gap-1">
+                    {POPULAR_NETWORKS.map((network) => (
+                      <button 
+                        key={network.id}
+                        onClick={() => handleSelect(network.id)}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left group relative"
+                      >
+                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-inner", network.icon)}>
+                          <span className="text-[10px] font-bold text-white uppercase">{network.symbol.slice(0,1)}</span>
+                        </div>
+                        <div className="flex-1 overflow-hidden flex flex-col justify-center">
+                          <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            {network.name}
+                            {selectedNetworkId === network.id && <Check className="h-3.5 w-3.5 text-blue-500" />}
+                          </p>
+                          {network.sub && <p className="text-xs text-muted-foreground truncate">{network.sub}</p>}
+                        </div>
+                        <div className="shrink-0 text-muted-foreground hover:text-foreground p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreVertical className="h-4 w-4" />
+                        </div>
+                      </button>
+                    ))}
+
                     <button 
                       onClick={() => setShowAllNetworks(prev => !prev)}
                       className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer text-left group w-full"
@@ -204,7 +226,7 @@ export function NetworkSelector({ selectedNetworkId = 1, onNetworkChange }: Prop
                            <Globe className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
                         </div>
                         <div className="flex-1 overflow-hidden">
-                          <p className="text-sm font-medium text-foreground">All popular networks</p>
+                          <p className="text-sm font-medium text-foreground">Explore more networks</p>
                         </div>
                       </div>
                       <ChevronLeft className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", showAllNetworks ? "-rotate-90" : "rotate-180")} />

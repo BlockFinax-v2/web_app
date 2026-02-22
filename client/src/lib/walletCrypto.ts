@@ -6,6 +6,8 @@
  * Mirrors the mobile app's secureStorage.ts encryption logic but adapted for browsers.
  */
 
+import { ethers } from 'ethers';
+
 // ─── Private Key Generation ────────────────────────────────────────────────
 
 /**
@@ -25,20 +27,11 @@ export function generatePrivateKey(): string {
 // ─── Address Derivation (simplified, no ethers dependency) ────────────────
 
 /**
- * Derive an Ethereum-like address from a private key using Web Crypto.
- * For demo purposes: SHA-256 hash of the key → last 20 bytes → checksummed hex.
- * In production: use ethers.js `new ethers.Wallet(privateKey).address`.
+ * Derive an actual Ethereum address from a private key using ethers.
  */
 export async function deriveAddressFromPrivateKey(privateKey: string): Promise<string> {
-    const keyBytes = hexToBytes(privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", keyBytes as any);
-    const hashBytes = new Uint8Array(hashBuffer);
-    // Take last 20 bytes as the address (Ethereum-style)
-    const addrBytes = hashBytes.slice(12);
-    const addrHex = Array.from(addrBytes)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-    return "0x" + toChecksumAddress(addrHex);
+    const wallet = new ethers.Wallet(privateKey);
+    return wallet.address;
 }
 
 /**
@@ -57,32 +50,15 @@ export async function deriveSmartAccountAddress(eoaAddress: string): Promise<str
 }
 
 /**
- * Derive a private key from a mnemonic phrase (BIP-39 simplified).
- * For demo: derives deterministically from the phrase via PBKDF2.
- * In production: use ethers.js `Wallet.fromMnemonic(phrase).privateKey`.
+ * Derive a private key from a mnemonic phrase using ethers.
  */
 export async function mnemonicToPrivateKey(mnemonic: string): Promise<string> {
-    const normalized = mnemonic.trim().toLowerCase();
-    const salt = new TextEncoder().encode("mnemonic");
-    const password = new TextEncoder().encode(normalized);
-
-    const baseKey = await crypto.subtle.importKey("raw", password, "PBKDF2", false, [
-        "deriveBits",
-    ]);
-
-    const bits = await crypto.subtle.deriveBits(
-        { name: "PBKDF2", salt, iterations: 2048, hash: "SHA-256" },
-        baseKey,
-        256
-    );
-
-    const bytes = new Uint8Array(bits);
-    return (
-        "0x" +
-        Array.from(bytes)
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("")
-    );
+    try {
+        const wallet = ethers.Wallet.fromPhrase(mnemonic.trim());
+        return wallet.privateKey;
+    } catch {
+        throw new Error("Invalid mnemonic phrase");
+    }
 }
 
 /**

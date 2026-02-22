@@ -29,6 +29,8 @@ const ERC20_ABI = [
 
 interface Props {
   address: string;
+  smartAccountAddress?: string | null;
+  isSmartAccountEnabled?: boolean;
   networkId?: number;
   selectedNetworkId?: number;
   onSend?: () => void;
@@ -37,7 +39,13 @@ interface Props {
   onNetworkChange?: (id: number) => void;
 }
 
-export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange }: Props) {
+export function EnhancedWalletOverview({ 
+  address, 
+  smartAccountAddress,
+  isSmartAccountEnabled = true,
+  networkId = 1, 
+  onNetworkChange 
+}: Props) {
   // Initialize from cache immediately to prevent 0.00 flash
   const [balanceETH, setBalanceETH] = useState<string>(() => localStorage.getItem(CACHE_KEYS.ETH_BALANCE) || "0.00");
   const [usdcBalance, setUSDCBalance] = useState<string>(() => localStorage.getItem(CACHE_KEYS.USDC_BALANCE) || "0.00");
@@ -48,6 +56,19 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
   const { toast } = useToast();
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+  
+  const currentNetwork = Object.values(NETWORK_CONFIGS).find(n => n.chainId === networkId) || NETWORK_CONFIGS[networkId] || { symbol: 'ETH', name: 'Ethereum' };
+  const nativeSymbol = currentNetwork?.nativeCurrency?.symbol || currentNetwork?.symbol || 'ETH';
+  
+  // Track which asset is selected to display its standalone balance in the header
+  const [selectedAssetSymbol, setSelectedAssetSymbol] = useState<string>(nativeSymbol);
+  
+  // Log Smart Account strictly to console as requested by user
+  useEffect(() => {
+    if (isSmartAccountEnabled && smartAccountAddress) {
+      console.log(`[Account Abstraction] Active Smart Account Address: ${smartAccountAddress}`);
+    }
+  }, [isSmartAccountEnabled, smartAccountAddress]);
 
   const handleTransactionComplete = (symbol: string, amount: string) => {
     if (!interactedTokens.includes(symbol)) {
@@ -69,7 +90,7 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
         if (network && network.rpcUrl) {
           const provider = new ethers.JsonRpcProvider(network.rpcUrl);
           
-          // Fetch Native Balance
+          // Fetch Native Balance (strictly EOA for UI display)
           const balanceWei = await provider.getBalance(address);
           if (isMounted) {
             const formattedEth = parseFloat(ethers.formatEther(balanceWei)).toFixed(4);
@@ -118,9 +139,6 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
     });
   };
 
-  const currentNetwork = Object.values(NETWORK_CONFIGS).find(n => n.chainId === networkId);
-  const nativeSymbol = currentNetwork?.nativeCurrency?.symbol || 'ETH';
-
   const ASSETS = [
     { symbol: nativeSymbol, name: currentNetwork?.name || 'Ethereum', balance: balanceETH, usdValue: '$0.00', change: '+0.0%', positive: true, isReal: true },
     { symbol: 'USDC', name: 'USD Coin', balance: usdcBalance, usdValue: '$0.00', change: '+0.0%', positive: true, isReal: true },
@@ -159,12 +177,12 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
     { symbol: 'TIA', name: 'Celestia', balance: '0.00', usdValue: '$0.00', change: '+0.0%', positive: true, isReal: false },
   ];
 
-  // Tokens that have balances, are defaults, or were specifically interacted with
-  const dashboardVisibleAssets = ASSETS.filter(a => 
-    parseFloat(a.balance) > 0 || 
-    [nativeSymbol, 'USDC'].includes(a.symbol) || 
-    interactedTokens.includes(a.symbol)
-  ).map(a => {
+  // Tokens that have balances > 0, are defaults (native), or were specifically interacted with
+  const dashboardVisibleAssets = ASSETS.filter(a => {
+    // strict parsing to catch cases like "0.00" string versus actual numbers like "7.96"
+    const parsedBalance = parseFloat((a.balance || "0").replace(/[^0-9.]/g, ''));
+    return parsedBalance > 0 || [nativeSymbol].includes(a.symbol) || interactedTokens.includes(a.symbol);
+  }).map(a => {
     // Inject mock prices for realistic view
     let price = 0;
     if (['ETH', 'WETH'].includes(a.symbol)) price = 3105.20;
@@ -183,8 +201,10 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
   });
 
   const totalValueNum = dashboardVisibleAssets.reduce((acc, a) => acc + (a._rawVal || 0), 0);
-  const totalUsd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalValueNum);
-  const todayChange = totalValueNum * 0.032; // Mock 3.2% daily change based on total balance
+  
+  const activeAsset = dashboardVisibleAssets.find(a => a.symbol === selectedAssetSymbol) || dashboardVisibleAssets[0];
+  
+  const todayChange = (activeAsset?._rawVal || 0) * 0.032; // Mock 3.2% daily change based on asset balance
   const isPositive = todayChange >= 0;
 
   return (
@@ -194,18 +214,21 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
       <div className="flex flex-col items-center justify-center pt-4 pb-2">
         <button 
           onClick={copyAddress}
-          className="flex items-center gap-2 mb-4 px-3 py-1 bg-muted/50 hover:bg-muted text-muted-foreground rounded-full text-xs font-mono transition-colors"
+          className="flex items-center gap-2 mb-4 px-3 py-1 bg-muted/50 hover:bg-muted text-muted-foreground rounded-full text-xs font-mono transition-colors border border-transparent hover:border-border/50"
         >
           {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Loading...'}
           <Copy className="h-3 w-3" />
         </button>
         
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-2 text-foreground">
-          {totalUsd}
+        <h1 className="text-4xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-2 text-foreground text-center">
+          {activeAsset?.balance} {activeAsset?.symbol}
         </h1>
-        <p className={`text-sm font-medium ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
-          {isPositive ? '+' : ''}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(todayChange)} (3.2%) Today
-        </p>
+        <div className="flex items-center justify-center gap-2 text-sm font-medium">
+          <span className="text-muted-foreground">{activeAsset?.usdValue}</span>
+          <span className={isPositive ? 'text-emerald-500' : 'text-red-500'}>
+            {isPositive ? '+' : ''}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(todayChange)} (+3.2%)
+          </span>
+        </div>
       </div>
 
       {/* Action Buttons Row */}
@@ -285,7 +308,10 @@ export function EnhancedWalletOverview({ address, networkId = 1, onNetworkChange
               {dashboardVisibleAssets.map((asset, index) => (
                 <div 
                   key={asset.symbol} 
+                  onClick={() => setSelectedAssetSymbol(asset.symbol)}
                   className={`p-4 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer ${
+                    selectedAssetSymbol === asset.symbol ? 'bg-muted/30 border-l-4 border-l-primary' : ''
+                  } ${
                     index !== dashboardVisibleAssets.length - 1 ? 'border-b border-border/50' : ''
                   }`}
                 >

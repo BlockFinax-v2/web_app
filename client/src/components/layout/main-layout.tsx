@@ -21,6 +21,7 @@ import { useTheme } from "@/components/ui/theme-provider";
 import { useWallet } from "@/hooks/use-wallet";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { SettingsModal } from "@/components/wallet/settings-modal";
 import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
@@ -227,17 +228,19 @@ export function MainLayout({ children }: MainLayoutProps) {
              </Button>
 
             {/* Wallet Mini-Profile */}
-            <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border">
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-medium leading-none">
-                   {wallet?.name || "My Wallet"}
-                </span>
-                <span className="text-xs text-muted-foreground mt-1 font-mono">
-                  {wallet?.address ? `${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}` : "Not Connected"}
-                </span>
+            <SettingsModal>
+              <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border hover:bg-muted/50 p-2 rounded-xl transition-colors cursor-pointer group">
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-medium leading-none group-hover:text-primary transition-colors">
+                     {wallet?.name || "My Wallet"}
+                  </span>
+                  <span className="text-xs text-muted-foreground mt-1 font-mono">
+                    {wallet?.address ? `${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}` : "Not Connected"}
+                  </span>
+                </div>
+                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-blue-500 border-2 border-background shadow-sm group-hover:scale-105 transition-transform"></div>
               </div>
-              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-blue-500 border-2 border-background shadow-sm"></div>
-            </div>
+            </SettingsModal>
           </div>
         </header>
 
