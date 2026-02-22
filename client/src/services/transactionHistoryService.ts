@@ -83,17 +83,35 @@ class TransactionHistoryService {
                 timestamp: tx.timestamp || Date.now(),
             };
 
-            const history = await this.getTransactionHistory(transaction.from);
-            history.unshift(transaction);
+            // Save to both sender and receiver local storage bins if they are valid addresses
+            const addressesToUpdate = new Set<string>();
+            if (transaction.from && !transaction.from.toLowerCase().includes('external')) {
+                addressesToUpdate.add(transaction.from.toLowerCase());
+            }
+            if (transaction.to && !transaction.to.toLowerCase().includes('external')) {
+                addressesToUpdate.add(transaction.to.toLowerCase());
+            }
 
-            const limitedHistory = history.slice(0, this.MAX_TRANSACTIONS);
+            for (const addr of addressesToUpdate) {
+                const history = await this.getTransactionHistory(addr);
 
-            localStorage.setItem(this.getStorageKey(transaction.from), JSON.stringify(limitedHistory));
+                // Prevent duplicate insertions
+                const existingIndex = history.findIndex(t => t.id === transaction.id);
+                if (existingIndex !== -1) {
+                    history[existingIndex] = { ...history[existingIndex], ...transaction };
+                } else {
+                    history.unshift(transaction);
+                }
 
-            this.cache.set(transaction.from.toLowerCase(), {
-                data: limitedHistory,
-                timestamp: Date.now(),
-            });
+                const limitedHistory = history.slice(0, this.MAX_TRANSACTIONS);
+
+                localStorage.setItem(this.getStorageKey(addr), JSON.stringify(limitedHistory));
+
+                this.cache.set(addr, {
+                    data: limitedHistory,
+                    timestamp: Date.now(),
+                });
+            }
 
             // Notify listeners of the update
             this.events.dispatchEvent(new CustomEvent('transaction_updated', { detail: transaction }));
@@ -102,17 +120,17 @@ class TransactionHistoryService {
         }
     }
 
-    async updateTransactionStatus(from: string, txId: string, status: TransactionStatus, additionalUpdates?: Partial<UnifiedTransaction>): Promise<void> {
+    async updateTransactionStatus(ownerAddress: string, txId: string, status: TransactionStatus, additionalUpdates?: Partial<UnifiedTransaction>): Promise<void> {
         try {
-            const history = await this.getTransactionHistory(from, { skipCache: true });
+            const history = await this.getTransactionHistory(ownerAddress, { skipCache: true });
             const txIndex = history.findIndex(t => t.id === txId || t.hash === txId);
 
             if (txIndex !== -1) {
                 history[txIndex] = { ...history[txIndex], status, ...additionalUpdates };
 
-                localStorage.setItem(this.getStorageKey(from), JSON.stringify(history));
+                localStorage.setItem(this.getStorageKey(ownerAddress), JSON.stringify(history));
 
-                this.cache.set(from.toLowerCase(), {
+                this.cache.set(ownerAddress.toLowerCase(), {
                     data: history,
                     timestamp: Date.now(),
                 });
