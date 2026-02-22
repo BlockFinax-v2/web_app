@@ -151,14 +151,14 @@ export const NETWORK_CONFIGS: Record<string | number, any> = {
         nativeCurrency: { name: 'Sepolia Ether', symbol: 'ETH', decimals: 18 },
     },
     // Number Keys matching chainIds exactly to ensure correct rendering in Dashboard
-    1: { name: 'Ethereum Mainnet', symbol: 'ETH', isTestnet: false, chainId: 1, rpcUrl: 'https://eth.llamarpc.com' },
-    11155111: { name: 'Sepolia', symbol: 'SepoliaETH', isTestnet: true, chainId: 11155111, rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com' },
-    8453: { name: 'Base', symbol: 'ETH', isTestnet: false, chainId: 8453, rpcUrl: 'https://mainnet.base.org' },
-    84532: { name: 'Base Sepolia', symbol: 'ETH', isTestnet: true, chainId: 84532, rpcUrl: 'https://sepolia.base.org' },
-    10: { name: 'OP Mainnet', symbol: 'ETH', isTestnet: false, chainId: 10, rpcUrl: 'https://mainnet.optimism.io' },
-    42161: { name: 'Arbitrum One', symbol: 'ETH', isTestnet: false, chainId: 42161, rpcUrl: 'https://arb1.arbitrum.io/rpc' },
-    1135: { name: 'Lisk', symbol: 'ETH', isTestnet: false, chainId: 1135, rpcUrl: 'https://rpc.api.lisk.com' },
-    4202: { name: 'Lisk Sepolia', symbol: 'ETH', isTestnet: true, chainId: 4202, rpcUrl: 'https://rpc.sepolia-api.lisk.com' },
+    1: { name: 'Ethereum Mainnet', symbol: 'ETH', isTestnet: false, chainId: 1, rpcUrl: 'https://eth.llamarpc.com', explorerUrl: 'https://etherscan.io' },
+    11155111: { name: 'Sepolia', symbol: 'SepoliaETH', isTestnet: true, chainId: 11155111, rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com', explorerUrl: 'https://sepolia.etherscan.io' },
+    8453: { name: 'Base', symbol: 'ETH', isTestnet: false, chainId: 8453, rpcUrl: 'https://mainnet.base.org', explorerUrl: 'https://basescan.org' },
+    84532: { name: 'Base Sepolia', symbol: 'ETH', isTestnet: true, chainId: 84532, rpcUrl: 'https://sepolia.base.org', explorerUrl: 'https://sepolia.basescan.org' },
+    10: { name: 'OP Mainnet', symbol: 'ETH', isTestnet: false, chainId: 10, rpcUrl: 'https://mainnet.optimism.io', explorerUrl: 'https://optimistic.etherscan.io' },
+    42161: { name: 'Arbitrum One', symbol: 'ETH', isTestnet: false, chainId: 42161, rpcUrl: 'https://arb1.arbitrum.io/rpc', explorerUrl: 'https://arbiscan.io' },
+    1135: { name: 'Lisk', symbol: 'ETH', isTestnet: false, chainId: 1135, rpcUrl: 'https://rpc.api.lisk.com', explorerUrl: 'https://blockscout.lisk.com' },
+    4202: { name: 'Lisk Sepolia', symbol: 'ETH', isTestnet: true, chainId: 4202, rpcUrl: 'https://rpc.sepolia-api.lisk.com', explorerUrl: 'https://sepolia-blockscout.lisk.com' },
 };
 
 export function getNetworkConfig(network: string | number) {

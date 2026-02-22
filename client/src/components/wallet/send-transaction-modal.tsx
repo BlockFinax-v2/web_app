@@ -10,8 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { TokenSelector, TokenIcon, getTokenColor, hasValue } from './token-selector';
 import { NetworkSelector } from './network-selector';
-import { Search, ChevronLeft, Check } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Check, Info, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NETWORK_CONFIGS } from "@/config/alchemyAccount";
 
 interface SendTransactionModalProps {
   isOpen: boolean;
@@ -31,7 +32,7 @@ export function SendTransactionModal({ isOpen, onClose, networkId, onNetworkChan
   const [tokenType, setTokenType] = useState(assets[0]?.symbol || 'ETH');
   const [useAA, setUseAA] = useState(true);
   const [password, setPassword] = useState('');
-  const [step, setStep] = useState<'select' | 'form' | 'password'>('select');
+  const [step, setStep] = useState<'select' | 'form' | 'review' | 'password'>('select');
   const [searchQuery, setSearchQuery] = useState('');
   
   const [isEstimating, setIsEstimating] = useState(false);
@@ -138,14 +139,18 @@ export function SendTransactionModal({ isOpen, onClose, networkId, onNetworkChan
           <div className="flex items-center justify-center">
             {step !== 'select' && (
               <button 
-                onClick={() => setStep(step === 'password' ? 'form' : 'select')}
+                onClick={() => {
+                  if (step === 'password') setStep('review');
+                  else if (step === 'review') setStep('form');
+                  else if (step === 'form') setStep('select');
+                }}
                 className="absolute left-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
             )}
             <DialogTitle className="text-lg font-bold">
-              {step === 'select' ? "Send" : step === 'form' ? `Send ${tokenType}` : "Confirm Transaction"}
+              {step === 'select' ? "Send" : step === 'form' ? `Send ${tokenType}` : step === 'review' ? 'Review' : "Confirm Transaction"}
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -283,11 +288,110 @@ export function SendTransactionModal({ isOpen, onClose, networkId, onNetworkChan
 
               <Button 
                 className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base shadow-lg shadow-blue-500/20 shrink-0 mt-4"
-                onClick={() => setStep('password')}
+                onClick={() => setStep('review')}
                 disabled={!recipient || !amount || parseFloat(amount) <= 0}
               >
-                Next
+                Review
               </Button>
+            </div>
+          )}
+
+          {step === 'review' && (
+            <div className="p-4 sm:p-6 space-y-6 flex-1 flex flex-col overflow-y-auto bg-[#1c1c1e]">
+              <div className="flex flex-col items-center justify-center space-y-1 py-4">
+                <div className="w-10 h-10 rounded-full bg-muted/20 flex items-center justify-center mb-2">
+                  <span className="font-bold text-lg">{tokenType.charAt(0)}</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold tracking-tight text-center text-white">
+                  {amount} {tokenType}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 p-4 bg-[#2c2c2e] rounded-xl border border-white/5">
+                <div className="space-y-1.5">
+                  <p className="text-xs text-white/50 font-medium">From</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded bg-purple-500/20 items-center justify-center flex shrink-0">
+                      <span className="text-[10px] text-purple-400">❖</span>
+                    </div>
+                    <div className="flex flex-col w-full overflow-hidden">
+                       <p className="text-sm font-medium text-white truncate">
+                         {address ? `${address.slice(0, 8)}...` : 'Wallet 1'}
+                       </p>
+                       <p className="text-[10px] text-white/50">Wallet 1</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <ChevronRight className="h-5 w-5 text-white/30" />
+                
+                <div className="space-y-1.5 pl-2">
+                  <p className="text-xs text-white/50 font-medium">To</p>
+                   <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500/20 items-center justify-center flex shrink-0">
+                      <span className="text-[10px] text-blue-400">◢</span>
+                    </div>
+                    <div className="flex flex-col w-full overflow-hidden">
+                       <p className="text-sm font-medium text-white truncate">
+                         {recipient.slice(0, 8)}...
+                       </p>
+                       <p className="text-[10px] text-white/50">Wallet 2</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-0 text-white rounded-xl overflow-hidden border border-white/5">
+                <div className="flex justify-between items-center p-4 bg-[#2c2c2e] border-b border-black/20">
+                  <span className="text-[15px] font-medium text-white/60 flex items-center gap-1.5">Network <Info className="h-3 w-3" /></span>
+                  <span className="font-medium text-[15px] flex items-center gap-2">
+                    <div className="w-4 h-4 bg-black rounded flex items-center justify-center"><span className="text-[10px] font-bold">{(NETWORK_CONFIGS as Record<string, any>)[networkId]?.name?.charAt(0) || 'N'}</span></div>
+                    {(NETWORK_CONFIGS as Record<string, any>)[networkId]?.name || 'Unknown'}
+                  </span>
+                </div>
+                
+                <div className="p-4 bg-[#2c2c2e] space-y-3">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[15px] font-medium text-white/60 flex items-center gap-1.5">Network fee <Info className="h-3 w-3" /></span>
+                    <div className="flex flex-col items-end text-right">
+                       <span className="font-medium text-[15px] flex items-center gap-2">
+                         <Button variant="ghost" size="icon" className="h-4 w-4 text-blue-400 hover:text-blue-300"><Edit2 className="h-3 w-3"/></Button>
+                         {useAA ? '0' : estimatedGas || '...'} <span className="text-white/80">{(NETWORK_CONFIGS as Record<string, any>)[networkId]?.nativeCurrency?.symbol || 'ETH'}</span>
+                       </span>
+                       <span className="text-xs text-white/40 mt-0.5">$0.00</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-[15px] font-medium text-white/60">Speed</span>
+                    <span className="text-[15px] font-medium text-blue-400">Market <span className="text-white/80">~15 sec</span></span>
+                  </div>
+                   <div className="flex justify-between items-center pt-2">
+                    <span className="text-[15px] font-medium text-white/60 flex items-center gap-1.5">Max fee <Info className="h-3 w-3" /></span>
+                     <span className="font-medium text-[15px]">
+                         {useAA ? '0' : estimatedGas || '0'}
+                     </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1" />
+
+              <div className="flex gap-4 mt-2 shrink-0 border-t border-white/5 pt-4">
+                <Button 
+                  variant="outline"
+                  className="w-full h-14 rounded-2xl bg-[#2c2c2e] border-transparent hover:bg-[#3a3a3c] text-white hover:text-white text-base font-semibold"
+                  onClick={() => setStep('form')}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="w-full h-14 rounded-2xl bg-white hover:bg-gray-200 text-black font-bold text-base shadow-lg"
+                  onClick={() => setStep('password')}
+                >
+                  Confirm
+                </Button>
+              </div>
             </div>
           )}
 

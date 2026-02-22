@@ -20,9 +20,11 @@ import {
 import { useTheme } from "@/components/ui/theme-provider";
 import { useWallet } from "@/hooks/use-wallet";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SettingsModal } from "@/components/wallet/settings-modal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { incomingTransferService } from "@/services/incomingTransferService";
+import { transactionHistoryService, UnifiedTransaction } from "@/services/transactionHistoryService";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -41,6 +43,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { wallet, lockWallet } = useWallet();
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [notifications, setNotifications] = useState<UnifiedTransaction[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Responsive check
   useEffect(() => {
@@ -57,6 +61,34 @@ export function MainLayout({ children }: MainLayoutProps) {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  // Global Incoming Transfer Listener & Notifications Fetch
+  useEffect(() => {
+    if (wallet?.address && wallet?.networkId) {
+      incomingTransferService.startListening(wallet.address);
+      
+      // Load initial notifications
+      transactionHistoryService.getTransactionHistory(wallet.address).then(history => {
+         setNotifications(history.slice(0, 5));
+         // Simplified unread counter logic
+         setUnreadCount(Math.min(history.filter(tx => Date.now() - tx.timestamp < 86400000).length, 9)); 
+      });
+      
+      const handleUpdate = (e: any) => {
+         const newTx = e.detail;
+         setNotifications(prev => [newTx, ...prev].slice(0, 5));
+         setUnreadCount(c => c + 1);
+      };
+      transactionHistoryService.events.addEventListener('transaction_updated', handleUpdate);
+
+      return () => {
+        incomingTransferService.stopListening();
+        transactionHistoryService.events.removeEventListener('transaction_updated', handleUpdate);
+      };
+    } else {
+      incomingTransferService.stopListening();
+    }
+  }, [wallet?.address, wallet?.networkId]);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-card border-r border-border">
@@ -220,12 +252,50 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
+                 <span className="sr-only">Toggle theme</span>
               </Button>
-             <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-               <Bell className="h-5 w-5" />
-               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background"></span>
-             </Button>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl" onClick={() => setUnreadCount(0)}>
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                       <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-background"></span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0 mr-4 mt-2 bg-card border-border shadow-2xl rounded-2xl overflow-hidden" align="end">
+                  <div className="p-4 border-b border-border bg-muted/20">
+                    <h3 className="font-semibold text-sm">Notifications</h3>
+                  </div>
+                  <div className="max-h-[360px] overflow-y-auto custom-scrollbar flex flex-col">
+                    {notifications.length === 0 ? (
+                       <div className="p-8 text-center text-sm text-muted-foreground">No recent notifications.</div>
+                    ) : (
+                       notifications.map((tx) => (
+                         <div key={tx.id} className="p-4 border-b border-border/50 hover:bg-muted/30 transition-colors flex gap-3 items-start">
+                           <div className={cn("p-2 rounded-full mt-0.5", 
+                               tx.type === 'receive' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'
+                           )}>
+                             {tx.type === 'receive' ? <Bell className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                             <p className="text-sm font-medium text-foreground">
+                               {tx.type === 'receive' ? 'Tokens Received' : 'Transaction Sent'}
+                             </p>
+                             <p className="text-xs text-muted-foreground truncate my-0.5">
+                               {tx.type === 'receive' ? `Received ${tx.amount} ${tx.tokenSymbol}` : `Sent ${tx.amount} ${tx.tokenSymbol}`}
+                             </p>
+                             <p className="text-[10px] text-muted-foreground/60 font-mono">
+                               {new Date(tx.timestamp).toLocaleTimeString()}
+                             </p>
+                           </div>
+                         </div>
+                       ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
 
             {/* Wallet Mini-Profile */}
             <SettingsModal>

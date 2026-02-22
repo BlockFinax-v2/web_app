@@ -15,8 +15,10 @@ import {
     NETWORK_CONFIGS
 } from "@/config/alchemyAccount";
 import { AlchemyAccountService } from "./alchemyAccountService";
+import { transactionHistoryService } from "./transactionHistoryService";
 import type { Hex } from "viem";
 import { retrieveDecryptedPrivateKey, retrieveDecryptedMnemonic } from "@/lib/browserStorage";
+import { toast } from "@/hooks/use-toast";
 
 const ERC20_ABI = [
     "function transfer(address to, uint256 amount) returns (bool)",
@@ -78,7 +80,13 @@ export class TransactionService {
         // Fallback logic if we get string IDs instead of chainId
         if (typeof networkId === 'string' && networkId.includes('_')) {
             const idMap: Record<string, number> = {
+                'ethereum_mainnet': 1,
+                'ethereum_sepolia': 11155111,
+                'base_mainnet': 8453,
                 'base_sepolia': 84532,
+                'optimism_mainnet': 10,
+                'arbitrum_mainnet': 42161,
+                'lisk_mainnet': 1135,
                 'lisk_sepolia': 4202,
             };
             const mappedId = idMap[networkId];
@@ -87,9 +95,18 @@ export class TransactionService {
             }
         }
 
-        // Alchemy service needs string ID like 'base_sepolia'
-        let alchemyNetworkId = 'base_sepolia';
-        if (network.chainId === 4202) alchemyNetworkId = 'lisk_sepolia';
+        const chainIdToAlchemyId: Record<number, string> = {
+            1: 'ethereum_mainnet',
+            11155111: 'ethereum_sepolia',
+            8453: 'base_mainnet',
+            84532: 'base_sepolia',
+            10: 'optimism_mainnet',
+            42161: 'arbitrum_mainnet',
+            1135: 'lisk_mainnet',
+            4202: 'lisk_sepolia'
+        };
+
+        const alchemyNetworkId = chainIdToAlchemyId[network.chainId] || 'base_sepolia';
 
         return { network, alchemyNetworkId };
     }
@@ -159,6 +176,9 @@ export class TransactionService {
             const privateKey = await retrieveDecryptedPrivateKey(params.password);
             if (!privateKey) throw new Error("No private key found for AA initialization");
 
+            const signerWallet = new ethers.Wallet(privateKey);
+            const primaryEoaAddress = signerWallet.address.toLowerCase();
+
             const alchemyService = new AlchemyAccountService(alchemyNetworkId);
             await alchemyService.initializeSmartAccount(privateKey);
 
@@ -166,29 +186,88 @@ export class TransactionService {
             if (!accountAddress) throw new Error("Failed to get smart account address");
 
             let txHash: Hex;
+            let userOpHash: Hex;
 
             if (!params.tokenAddress) {
                 const amountInWei = ethers.parseEther(params.amount);
                 const result = await alchemyService.sendNativeToken(
                     params.recipientAddress as Hex,
-                    amountInWei
+                    amountInWei,
+                    { waitForTx: false }
                 );
-                txHash = result.hash;
+                userOpHash = result.hash;
+                txHash = userOpHash; // Temporary mapping until full resolution
             } else {
                 const decimals = params.tokenDecimals || 18;
                 const amountInUnits = ethers.parseUnits(params.amount, decimals);
                 const result = await alchemyService.sendERC20Token(
                     params.tokenAddress as Hex,
                     params.recipientAddress as Hex,
-                    amountInUnits
+                    amountInUnits,
+                    { waitForTx: false }
                 );
-                txHash = result.hash;
+                userOpHash = result.hash;
+                txHash = userOpHash;
             }
 
             const explorerUrl = networkConfig.explorerUrl
                 ? `${networkConfig.explorerUrl}/tx/${txHash}`
                 : undefined;
 
+            // Save under the primary EOA wallet address so it appears in the UI dashboard history globally.
+            const fromAddress = primaryEoaAddress;
+
+            // 1. Immediately record as pending
+            await transactionHistoryService.recordTransaction({
+                hash: txHash,
+                from: fromAddress,
+                to: params.recipientAddress,
+                category: 'wallet',
+                type: 'send',
+                status: 'pending',
+                amount: params.amount,
+                tokenSymbol: params.tokenAddress ? 'ERC-20' : networkConfig.nativeCurrency?.symbol || 'ETH',
+                tokenAddress: params.tokenAddress,
+                network: networkConfig.name,
+                networkId: params.networkId.toString(),
+                chainId: networkConfig.chainId,
+                description: `Sent ${params.amount} (Gasless)`,
+                timestamp: Date.now(),
+                explorerUrl
+            });
+
+            // 2. Wait for confirmation asynchronously in the background
+            alchemyService.waitForUserOperation(userOpHash).then(async (finalTxHash) => {
+                console.log(`[TransactionService Web] AA Transaction CONFIRMED in background (Hash: ${finalTxHash}).`);
+
+                const finalExplorerUrl = networkConfig.explorerUrl
+                    ? `${networkConfig.explorerUrl}/tx/${finalTxHash}`
+                    : undefined;
+
+                // Update with final real transaction hash, explorer URL, and success status
+                await transactionHistoryService.updateTransactionStatus(
+                    fromAddress,
+                    txHash, // Original ID we saved it under
+                    'success',
+                    { hash: finalTxHash, explorerUrl: finalExplorerUrl }
+                );
+
+                toast({
+                    title: "Gasless Transaction Confirmed!",
+                    description: `Your sponsored ${params.amount} transfer on ${networkConfig.name} was successful.`,
+                });
+            }).catch((err: any) => {
+                console.error(`[TransactionService Web] AA background confirmation failed:`, err);
+                transactionHistoryService.updateTransactionStatus(fromAddress, txHash, 'failed');
+
+                toast({
+                    title: "Gasless Transaction Failed",
+                    description: `Your sponsored transfer on ${networkConfig.name} failed to confirm.`,
+                    variant: "destructive"
+                });
+            });
+
+            // 3. Return immediately to the UI
             return {
                 hash: txHash,
                 from: accountAddress,
@@ -272,6 +351,61 @@ export class TransactionService {
                 ? `${networkConfig.explorerUrl}/tx/${txResponse.hash}`
                 : undefined;
 
+            const fromAddress = txResponse.from.toLowerCase();
+
+            // 1. Immediately record as pending
+            await transactionHistoryService.recordTransaction({
+                hash: txResponse.hash,
+                from: fromAddress,
+                to: txResponse.to || params.recipientAddress,
+                category: 'wallet',
+                type: 'send',
+                status: 'pending',
+                amount: params.amount,
+                tokenSymbol: params.tokenAddress ? 'ERC-20' : networkConfig.nativeCurrency?.symbol || 'ETH',
+                tokenAddress: params.tokenAddress,
+                network: networkConfig.name,
+                networkId: params.networkId.toString(),
+                chainId: networkConfig.chainId,
+                description: `Sent ${params.amount}`,
+                timestamp: Date.now(),
+                explorerUrl
+            });
+
+            // 2. Wait for confirmation asynchronously in the background
+            txResponse.wait().then(async (receipt: any) => {
+                console.log(`[TransactionService Web] EOA Transaction ${receipt?.status === 1 ? 'CONFIRMED' : 'FAILED'} in background.`);
+                const status = receipt && receipt.status === 1 ? 'success' : 'failed';
+                await transactionHistoryService.updateTransactionStatus(
+                    fromAddress,
+                    txResponse.hash,
+                    status
+                );
+
+                if (status === 'success') {
+                    toast({
+                        title: "Transaction Confirmed!",
+                        description: `Your ${params.amount} transfer on ${networkConfig.name} was successful.`,
+                    });
+                } else {
+                    toast({
+                        title: "Transaction Failed",
+                        description: `Your transfer on ${networkConfig.name} failed to confirm.`,
+                        variant: "destructive"
+                    });
+                }
+            }).catch((err: any) => {
+                console.error(`[TransactionService Web] EOA background confirmation failed:`, err);
+                transactionHistoryService.updateTransactionStatus(fromAddress, txResponse.hash, 'failed');
+
+                toast({
+                    title: "Transaction Failed",
+                    description: `Your transfer on ${networkConfig.name} failed to confirm.`,
+                    variant: "destructive"
+                });
+            });
+
+            // 3. Return immediately to the UI
             return {
                 hash: txResponse.hash,
                 from: txResponse.from,

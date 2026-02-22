@@ -55,6 +55,9 @@ class TransactionHistoryService {
 
     private cache: Map<string, { data: UnifiedTransaction[]; timestamp: number }> = new Map();
 
+    // Event emitter for real-time UI updates
+    public events: EventTarget = new EventTarget();
+
     private constructor() { }
 
     public static getInstance(): TransactionHistoryService {
@@ -91,8 +94,34 @@ class TransactionHistoryService {
                 data: limitedHistory,
                 timestamp: Date.now(),
             });
+
+            // Notify listeners of the update
+            this.events.dispatchEvent(new CustomEvent('transaction_updated', { detail: transaction }));
         } catch (error) {
             console.error('[TransactionHistoryWeb] Error recording transaction:', error);
+        }
+    }
+
+    async updateTransactionStatus(from: string, txId: string, status: TransactionStatus, additionalUpdates?: Partial<UnifiedTransaction>): Promise<void> {
+        try {
+            const history = await this.getTransactionHistory(from, { skipCache: true });
+            const txIndex = history.findIndex(t => t.id === txId || t.hash === txId);
+
+            if (txIndex !== -1) {
+                history[txIndex] = { ...history[txIndex], status, ...additionalUpdates };
+
+                localStorage.setItem(this.getStorageKey(from), JSON.stringify(history));
+
+                this.cache.set(from.toLowerCase(), {
+                    data: history,
+                    timestamp: Date.now(),
+                });
+
+                // Notify listeners that this specific transaction changed status
+                this.events.dispatchEvent(new CustomEvent('transaction_updated', { detail: history[txIndex] }));
+            }
+        } catch (error) {
+            console.error('[TransactionHistoryWeb] Error updating transaction status:', error);
         }
     }
 

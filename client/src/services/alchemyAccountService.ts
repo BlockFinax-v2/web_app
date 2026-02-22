@@ -95,7 +95,7 @@ export class AlchemyAccountService {
 
     async sendUserOperation(
         call: TransactionCall,
-        options?: { gasSponsored?: boolean; }
+        options?: { gasSponsored?: boolean; waitForTx?: boolean; }
     ): Promise<UserOperationResult> {
         if (!this.client) throw new Error('Smart account not initialized');
 
@@ -106,13 +106,22 @@ export class AlchemyAccountService {
             };
 
             const result = await this.client.sendUserOperation(userOp);
-            const txHash = await this.client.waitForUserOperationTransaction({ hash: result.hash });
 
+            if (options?.waitForTx === false) {
+                return { hash: result.hash as Hex, request: result.request };
+            }
+
+            const txHash = await this.client.waitForUserOperationTransaction({ hash: result.hash });
             return { hash: txHash, request: result.request };
         } catch (error: any) {
             console.error('[AlchemyService] Failed to send user operation:', error);
             throw error;
         }
+    }
+
+    async waitForUserOperation(hash: Hex): Promise<Hex> {
+        if (!this.client) throw new Error('Smart account not initialized');
+        return await this.client.waitForUserOperationTransaction({ hash });
     }
 
     async sendBatchUserOperation(
@@ -137,13 +146,13 @@ export class AlchemyAccountService {
     }
 
     async sendNativeToken(
-        to: Hex, amount: bigint, options?: { gasSponsored?: boolean; }
+        to: Hex, amount: bigint, options?: { gasSponsored?: boolean; waitForTx?: boolean; }
     ): Promise<UserOperationResult> {
         return this.sendUserOperation({ target: to, data: '0x', value: amount }, options);
     }
 
     async sendERC20Token(
-        tokenAddress: Hex, to: Hex, amount: bigint, options?: { gasSponsored?: boolean; }
+        tokenAddress: Hex, to: Hex, amount: bigint, options?: { gasSponsored?: boolean; waitForTx?: boolean; }
     ): Promise<UserOperationResult> {
         const data = encodeFunctionData({
             abi: [{ name: 'transfer', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] }],
