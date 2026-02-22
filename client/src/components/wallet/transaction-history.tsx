@@ -28,9 +28,9 @@ export function TransactionHistory({ address, networkId }: Props) {
         if (showLoader) setLoading(true);
         // Note: In a fully production app with an indexer, we'd query Alchemy/Etherscan here.
         // For this implementation, we read our local recorded history for parity with mobile.
-        const history = await transactionHistoryService.getTransactionHistory(address, {
-          network: networkId?.toString()
-        });
+        // We do NOT filter by networkId here, because we want users to see incoming transfers 
+        // from background chains (e.g. Sepolia) even if they are currently on Mainnet.
+        const history = await transactionHistoryService.getTransactionHistory(address);
         if (isMounted) setTransactions(history);
       } catch (err) {
         console.error("Failed to load history", err);

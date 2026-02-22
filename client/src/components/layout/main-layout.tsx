@@ -40,7 +40,7 @@ const NAV_ITEMS = [
 export function MainLayout({ children }: MainLayoutProps) {
   const [location, setLocation] = useLocation();
   const { theme, setTheme } = useTheme();
-  const { wallet, lockWallet } = useWallet();
+  const { wallet, lockWallet, smartAccountAddress } = useWallet();
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [notifications, setNotifications] = useState<UnifiedTransaction[]>([]);
@@ -64,8 +64,9 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   // Global Incoming Transfer Listener & Notifications Fetch
   useEffect(() => {
-    if (wallet?.address && wallet?.networkId) {
-      incomingTransferService.startListening(wallet.address);
+    if (wallet?.address) {
+      const addressesToWatch = [wallet.address, smartAccountAddress].filter(Boolean) as string[];
+      incomingTransferService.startListening(addressesToWatch);
       
       // Load initial notifications
       transactionHistoryService.getTransactionHistory(wallet.address).then(history => {
@@ -88,7 +89,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     } else {
       incomingTransferService.stopListening();
     }
-  }, [wallet?.address, wallet?.networkId]);
+  }, [wallet?.address, smartAccountAddress]);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-card border-r border-border">

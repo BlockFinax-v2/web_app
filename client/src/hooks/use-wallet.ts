@@ -259,7 +259,7 @@ export function useWallet() {
 
         const privateKey = await retrieveDecryptedPrivateKey(password);
         await setupUnlockedState(privateKey);
-        toast({ title: 'Welcome back! 👋', description: 'Wallet unlocked. Smart Account is active.' });
+        toast({ title: 'Welcome back! 👋', description: 'Wallet unlocked' });
         return { address: getStoredAddress()! };
       } catch (err: any) {
         setError(err.message || 'Failed to unlock wallet');

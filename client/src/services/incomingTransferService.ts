@@ -5,7 +5,7 @@ import { transactionHistoryService } from "./transactionHistoryService";
 
 export class IncomingTransferService {
     private static instance: IncomingTransferService;
-    private currentAddress: string | null = null;
+    private currentAddresses: string[] = [];
 
     // Polling state per network
     private activeIntervals: Record<string, NodeJS.Timeout> = {};
@@ -41,15 +41,16 @@ export class IncomingTransferService {
 
     /**
      * Starts listening for incoming native token transfers by polling the balance
-     * across ALL supported networks simultaneously.
+     * across ALL supported networks for MULTIPLE addresses (e.g. EOA + Smart Account)
      */
-    public async startListening(address: string) {
-        if (this.currentAddress === address && this.isListening) {
+    public async startListening(addresses: string[]) {
+        const sortedAddresses = [...addresses].sort().join(',');
+        if (this.currentAddresses.sort().join(',') === sortedAddresses && this.isListening) {
             return;
         }
 
         this.stopListening();
-        this.currentAddress = address;
+        this.currentAddresses = addresses;
         this.isListening = true;
 
         const uniqueConfigs = Object.values(NETWORK_CONFIGS).reduce((acc: any[], config: any) => {
@@ -59,7 +60,7 @@ export class IncomingTransferService {
             return acc;
         }, []);
 
-        console.log(`[IncomingTransferService] Booting listeners for ${uniqueConfigs.length} networks...`);
+        console.log(`[IncomingTransferService] Booting listeners for ${uniqueConfigs.length} networks across ${addresses.length} addresses...`);
 
         for (const config of uniqueConfigs) {
             const chainKey = config.chainId.toString();
@@ -67,16 +68,19 @@ export class IncomingTransferService {
                 const provider = new ethers.JsonRpcProvider(config.rpcUrl);
                 this.providers[chainKey] = provider;
 
-                // Fetch initial baseline sync asynchronously so we don't block the loop
-                provider.getBalance(address).then(balance => {
-                    this.lastBalances[chainKey] = balance;
-                    // Poll every 15 seconds per network
-                    this.activeIntervals[chainKey] = setInterval(() => this.pollBalance(address, config, provider), 15000);
-                }).catch(e => {
-                    // Initial balance fetch failed (e.g. rate limit), retry next cycle
-                    this.lastBalances[chainKey] = 0n;
-                    this.activeIntervals[chainKey] = setInterval(() => this.pollBalance(address, config, provider), 15000);
-                });
+                for (const address of addresses) {
+                    const key = `${chainKey}-${address}`;
+                    // Fetch initial baseline sync asynchronously
+                    provider.getBalance(address).then(balance => {
+                        this.lastBalances[key] = balance;
+                        console.log(`[IncomingTransferService] ${config.name} (${address.slice(0, 6)}) Baseline: ${ethers.formatEther(balance)}`);
+                    }).catch(e => {
+                        console.log(`[IncomingTransferService] ${config.name} (${address.slice(0, 6)}) Fetch Failed. Will retry.`);
+                    });
+                }
+
+                // Poll every 15 seconds per network regardless
+                this.activeIntervals[chainKey] = setInterval(() => this.pollBalances(addresses, config, provider), 15000);
             } catch (error) {
                 console.error(`[IncomingTransferService] Failed to start listener on ${config.name}:`, error);
             }
@@ -92,52 +96,57 @@ export class IncomingTransferService {
         console.log("[IncomingTransferService] Stopped all network listeners.");
     }
 
-    private async pollBalance(address: string, config: any, provider: ethers.JsonRpcProvider) {
+    private async pollBalances(addresses: string[], config: any, provider: ethers.JsonRpcProvider) {
         if (!this.isListening) return;
         const chainKey = config.chainId.toString();
 
-        try {
-            const currentBalance = await provider.getBalance(address);
-            const baseline = this.lastBalances[chainKey];
+        for (const address of addresses) {
+            const key = `${chainKey}-${address}`;
+            try {
+                const currentBalance = await provider.getBalance(address);
+                const baseline = this.lastBalances[key];
 
-            if (baseline !== undefined && currentBalance > baseline) {
-                const diff = currentBalance - baseline;
-                const formattedDiff = ethers.formatEther(diff);
-                const symbol = config.nativeCurrency?.symbol || 'ETH';
+                // If we never successfully got a baseline, THIS is our baseline. Do not trigger a diff.
+                if (baseline === undefined) {
+                    this.lastBalances[key] = currentBalance;
+                    continue;
+                }
 
-                console.log(`[IncomingTransferService] 🚨 INCOMING DETECTED ON ${config.name}: +${formattedDiff} ${symbol}`);
+                if (currentBalance > baseline) {
+                    const diff = currentBalance - baseline;
+                    const formattedDiff = ethers.formatEther(diff);
+                    const symbol = config.nativeCurrency?.symbol || 'ETH';
 
-                // 1. Show dynamic, premium toast
-                toast({
-                    title: "Tokens Received!",
-                    description: `You just received +${parseFloat(formattedDiff).toFixed(4)} ${symbol} on ${config.name}`,
-                    variant: "success",
-                });
+                    console.log(`🚨 INCOMING ON ${config.name} TO ${address.slice(0, 6)}: +${formattedDiff} ${symbol}`);
 
-                // 2. Record it in the activity history 
-                const txHashId = `incoming-${Date.now()}-${chainKey}`;
-                await transactionHistoryService.recordTransaction({
-                    hash: txHashId,
-                    from: "External Sender",
-                    to: address.toLowerCase(),
-                    category: 'wallet',
-                    type: 'receive',
-                    status: 'success',
-                    amount: formattedDiff,
-                    tokenSymbol: symbol,
-                    network: config.name,
-                    networkId: config.chainId.toString(),
-                    chainId: config.chainId,
-                    description: `Received ${parseFloat(formattedDiff).toFixed(4)} ${symbol}`,
-                    timestamp: Date.now()
-                });
+                    toast({
+                        title: "Tokens Received!",
+                        description: `Received +${parseFloat(formattedDiff).toFixed(4)} ${symbol} on ${config.name}`,
+                        variant: "success",
+                    });
+
+                    const txHashId = `incoming-${Date.now()}-${chainKey}-${address.slice(0, 8)}`;
+                    await transactionHistoryService.recordTransaction({
+                        hash: txHashId,
+                        from: "External Sender",
+                        to: address.toLowerCase(),
+                        category: 'wallet',
+                        type: 'receive',
+                        status: 'success',
+                        amount: formattedDiff,
+                        tokenSymbol: symbol,
+                        network: config.name,
+                        networkId: config.chainId.toString(),
+                        chainId: config.chainId,
+                        description: `Received ${parseFloat(formattedDiff).toFixed(4)} ${symbol}`,
+                        timestamp: Date.now()
+                    });
+                }
+
+                this.lastBalances[key] = currentBalance;
+            } catch (error) {
+                // Silently fail polling iterations
             }
-
-            // Always update last balance
-            this.lastBalances[chainKey] = currentBalance;
-
-        } catch (error) {
-            // Silently fail polling iterations to prevent console spam on rate limits
         }
     }
 }
