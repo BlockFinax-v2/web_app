@@ -238,7 +238,16 @@ export function SendTransactionModal({ isOpen, onClose, networkId, onNetworkChan
               </div>
 
               <div className="space-y-2">
-                <Label>Amount</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Amount</Label>
+                  <button
+                    type="button"
+                    onClick={() => setAmount(selectedAsset?.balance ?? '')}
+                    className="text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-2 py-0.5 rounded-md transition-colors"
+                  >
+                    Max
+                  </button>
+                </div>
                 <div className="relative">
                   <Input 
                     type="number"
