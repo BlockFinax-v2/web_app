@@ -126,8 +126,9 @@ export function useWallet() {
       setStoredAddress(eoaAddress);
       setStoredSmartAccountAddress(saAddress);
 
-      const savedSettings = getSettings<{ walletName?: string }>();
+      const savedSettings = getSettings<{ walletName?: string; selectedNetworkId?: number }>();
       const name = walletName || savedSettings?.walletName || 'My Wallet';
+      const savedNetworkId = savedSettings?.selectedNetworkId ?? 1;
 
       setState((prev) => ({
         ...prev,
@@ -140,9 +141,11 @@ export function useWallet() {
         smartAccountAddress: saAddress,
         isSmartAccountEnabled: true,
         isSmartAccountInitialized: true,
+        selectedNetworkId: savedNetworkId,
       }));
 
-      saveSettings({ walletName: name });
+      // Preserve existing settings (e.g. selectedNetworkId) so network choice persists across unlock/create/import
+      saveSettings({ ...(getSettings() || {}), walletName: name });
 
       // Schedule auto-lock (Disabled for testing)
       // if (autoLockTimer) clearTimeout(autoLockTimer);
