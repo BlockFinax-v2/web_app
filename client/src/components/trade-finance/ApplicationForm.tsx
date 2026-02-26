@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   TrendingUpIcon,
   FileTextIcon,
@@ -187,28 +186,38 @@ export function ApplicationForm({ walletAddress }: { walletAddress: string }) {
   const canSubmit = buyerCompanyName && buyerCountry && sellerAddress && tradeDescription && requestedAmount && tradeValue && proformaInvoice && salesContract;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Send className="h-5 w-5 text-primary" />
-          Apply for Trade Financing
-        </CardTitle>
-        <CardDescription>
-          Submit your trade details. BlockFinaX will match you with financiers who will compete to offer you the best terms.
-        </CardDescription>
+    <Card className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm shadow-lg overflow-hidden">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+            <Send className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-lg font-semibold tracking-tight">Apply for Trade Financing</CardTitle>
+            <CardDescription className="mt-0.5">
+              Submit your trade details. BlockFinaX will match you with financiers who will compete to offer you the best terms.
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <Alert>
-          <Handshake className="h-4 w-4" />
-          <AlertDescription>
-            <strong>How it works:</strong> Apply \u2192 Receive Offers from Financiers \u2192 Compare and Select Best Offer \u2192 Platform Fee: 1%
-          </AlertDescription>
-        </Alert>
+      <CardContent className="space-y-6 pt-0">
+        <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 flex items-start gap-3">
+          <Handshake className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">How it works</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Apply → Receive offers from financiers → Compare and select the best offer → Platform fee: 1%
+            </p>
+          </div>
+        </div>
 
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Shield className="h-4 w-4" /> Financing Instrument *</h3>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 border border-white/10"><Shield className="h-4 w-4 text-primary" /></span>
+            Financing Instrument *
+          </h3>
           <Select value={financingType} onValueChange={setFinancingType}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full rounded-xl border-white/10 bg-background/50 h-11">
               <SelectValue placeholder="Select financing type" />
             </SelectTrigger>
             <SelectContent>
@@ -229,56 +238,65 @@ export function ApplicationForm({ walletAddress }: { walletAddress: string }) {
           <p className="text-xs text-muted-foreground mt-1.5">{FINANCING_TYPE_DESCRIPTIONS[financingType] || ""}</p>
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><UserIcon className="h-4 w-4" /> Buyer / Importer Details</h3>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 border border-white/10"><UserIcon className="h-4 w-4 text-primary" /></span>
+            Buyer / Importer Details
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label>Company Name *</Label><Input value={buyerCompanyName} onChange={(e) => setBuyerCompanyName(e.target.value)} placeholder="Your company name" /></div>
-            <div><Label>Registration Number</Label><Input value={buyerRegistrationNumber} onChange={(e) => setBuyerRegistrationNumber(e.target.value)} placeholder="Business registration #" /></div>
-            <div><Label>Country</Label><Input value={buyerCountry} onChange={(e) => setBuyerCountry(e.target.value)} placeholder="Country of operation" /></div>
-            <div><Label>Contact Person</Label><Input value={buyerContactPerson} onChange={(e) => setBuyerContactPerson(e.target.value)} placeholder="Primary contact" /></div>
-            <div><Label>Email</Label><Input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="contact@company.com" /></div>
-            <div><Label>Phone</Label><Input value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="+1 234 567 890" /></div>
+            <div className="space-y-1.5"><Label className="text-muted-foreground">Company Name *</Label><Input value={buyerCompanyName} onChange={(e) => setBuyerCompanyName(e.target.value)} placeholder="Your company name" className="rounded-xl border-white/10 h-11" /></div>
+            <div className="space-y-1.5"><Label className="text-muted-foreground">Registration Number</Label><Input value={buyerRegistrationNumber} onChange={(e) => setBuyerRegistrationNumber(e.target.value)} placeholder="Business registration #" className="rounded-xl border-white/10 h-11" /></div>
+            <div className="space-y-1.5"><Label className="text-muted-foreground">Country</Label><Input value={buyerCountry} onChange={(e) => setBuyerCountry(e.target.value)} placeholder="Country of operation" className="rounded-xl border-white/10 h-11" /></div>
+            <div className="space-y-1.5"><Label className="text-muted-foreground">Contact Person</Label><Input value={buyerContactPerson} onChange={(e) => setBuyerContactPerson(e.target.value)} placeholder="Primary contact" className="rounded-xl border-white/10 h-11" /></div>
+            <div className="space-y-1.5"><Label className="text-muted-foreground">Email</Label><Input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="contact@company.com" className="rounded-xl border-white/10 h-11" /></div>
+            <div className="space-y-1.5"><Label className="text-muted-foreground">Phone</Label><Input value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} placeholder="+1 234 567 890" className="rounded-xl border-white/10 h-11" /></div>
           </div>
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><BuildingIcon className="h-4 w-4" /> Seller / Exporter</h3>
-          <div><Label>Seller Wallet Address *</Label><Input value={sellerAddress} onChange={(e) => setSellerAddress(e.target.value)} placeholder="0x..." className="font-mono" /></div>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 border border-white/10"><BuildingIcon className="h-4 w-4 text-primary" /></span>
+            Seller / Exporter
+          </h3>
+          <div className="space-y-1.5"><Label className="text-muted-foreground">Seller Wallet Address *</Label><Input value={sellerAddress} onChange={(e) => setSellerAddress(e.target.value)} placeholder="0x..." className="font-mono rounded-xl border-white/10 h-11" /></div>
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><FileTextIcon className="h-4 w-4" /> Trade Details</h3>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 border border-white/10"><FileTextIcon className="h-4 w-4 text-primary" /></span>
+            Trade Details
+          </h3>
           <div className="space-y-4">
-            <div><Label>Trade Description *</Label><Textarea value={tradeDescription} onChange={(e) => setTradeDescription(e.target.value)} placeholder="Describe the goods/services being traded" rows={3} /></div>
+            <div className="space-y-1.5"><Label className="text-muted-foreground">Trade Description *</Label><Textarea value={tradeDescription} onChange={(e) => setTradeDescription(e.target.value)} placeholder="Describe the goods/services being traded" rows={3} className="rounded-xl border-white/10 resize-none" /></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><Label>Trade Value (USDC) *</Label><Input type="number" value={tradeValue} onChange={(e) => setTradeValue(e.target.value)} placeholder="Total trade value" /></div>
-              <div><Label>Requested Financing (USDC) *</Label><Input type="number" value={requestedAmount} onChange={(e) => setRequestedAmount(e.target.value)} placeholder="Amount needed" /></div>
-              <div>
-                <Label>Collateral</Label>
+              <div className="space-y-1.5"><Label className="text-muted-foreground">Trade Value (USDC) *</Label><Input type="number" value={tradeValue} onChange={(e) => setTradeValue(e.target.value)} placeholder="Total trade value" className="rounded-xl border-white/10 h-11" /></div>
+              <div className="space-y-1.5"><Label className="text-muted-foreground">Requested Financing (USDC) *</Label><Input type="number" value={requestedAmount} onChange={(e) => setRequestedAmount(e.target.value)} placeholder="Amount needed" className="rounded-xl border-white/10 h-11" /></div>
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Collateral</Label>
                 <Select value={collateralType} onValueChange={setCollateralType}>
-                  <SelectTrigger><SelectValue placeholder="Select collateral type" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl border-white/10 h-11"><SelectValue placeholder="Select collateral type" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="wallet_balance">Wallet Balance</SelectItem>
                     <SelectItem value="none">No Collateral</SelectItem>
                   </SelectContent>
                 </Select>
                 {collateralType === "wallet_balance" ? (
-                  <div className="mt-2 bg-muted rounded-md p-3 flex items-center justify-between">
+                  <div className="mt-2 rounded-xl bg-white/5 border border-white/10 p-3 flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">USDC Balance ({activeNetwork?.name || "Base Sepolia"})</span>
                     {balanceLoading ? (
                       <span className="text-sm flex items-center gap-1.5"><Loader2 className="h-3 w-3 animate-spin" /> Fetching...</span>
                     ) : (
-                      <span className="text-sm font-semibold">{walletBalance ? `${parseFloat(walletBalance).toFixed(2)} USDC` : "0.00 USDC"}</span>
+                      <span className="text-sm font-semibold tabular-nums">{walletBalance ? `${parseFloat(walletBalance).toFixed(2)} USDC` : "0.00 USDC"}</span>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground mt-1">No collateral pledged \u2014 financiers will assess risk accordingly</p>
+                  <p className="text-xs text-muted-foreground mt-1">No collateral pledged — financiers will assess risk accordingly</p>
                 )}
               </div>
-              <div>
-                <Label>Duration (days)</Label>
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Duration (days)</Label>
                 <Select value={requestedDuration} onValueChange={setRequestedDuration}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl border-white/10 h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">30 days</SelectItem>
                     <SelectItem value="60">60 days</SelectItem>
@@ -288,20 +306,23 @@ export function ApplicationForm({ walletAddress }: { walletAddress: string }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Sales Contract Number</Label><Input value={salesContractNumber} onChange={(e) => setSalesContractNumber(e.target.value)} placeholder="SC-2026-001" /></div>
+              <div className="space-y-1.5"><Label className="text-muted-foreground">Sales Contract Number</Label><Input value={salesContractNumber} onChange={(e) => setSalesContractNumber(e.target.value)} placeholder="SC-2026-001" className="rounded-xl border-white/10 h-11" /></div>
             </div>
             {salesContractNumber && (
-              <div><Label>Contract Date</Label><Input type="date" value={salesContractDate} onChange={(e) => setSalesContractDate(e.target.value)} /></div>
+              <div className="space-y-1.5"><Label className="text-muted-foreground">Contract Date</Label><Input type="date" value={salesContractDate} onChange={(e) => setSalesContractDate(e.target.value)} className="rounded-xl border-white/10 h-11" /></div>
             )}
           </div>
         </div>
 
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Upload className="h-4 w-4" /> Required Documents *</h3>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 border border-white/10"><Upload className="h-4 w-4 text-primary" /></span>
+            Required Documents *
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Proforma Invoice *</Label>
-              <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${proformaInvoice ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-muted-foreground/25 hover:border-primary/50"}`}>
+              <Label className="text-muted-foreground">Proforma Invoice *</Label>
+              <div className={`border-2 border-dashed rounded-xl p-4 text-center transition-all ${proformaInvoice ? "border-emerald-500/50 bg-emerald-500/10" : "border-white/20 hover:border-primary/40 bg-white/5"}`}>
                 {proformaInvoice ? (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
@@ -323,8 +344,8 @@ export function ApplicationForm({ walletAddress }: { walletAddress: string }) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Sales Contract *</Label>
-              <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${salesContract ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-muted-foreground/25 hover:border-primary/50"}`}>
+              <Label className="text-muted-foreground">Sales Contract *</Label>
+              <div className={`border-2 border-dashed rounded-xl p-4 text-center transition-all ${salesContract ? "border-emerald-500/50 bg-emerald-500/10" : "border-white/20 hover:border-primary/40 bg-white/5"}`}>
                 {salesContract ? (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
@@ -349,14 +370,14 @@ export function ApplicationForm({ walletAddress }: { walletAddress: string }) {
         </div>
 
         {requestedAmount && parseFloat(requestedAmount) > 0 && (
-          <div className="bg-muted rounded-lg p-4 space-y-2">
-            <div className="flex justify-between text-sm"><span>Requested Financing</span><span className="font-semibold">${parseFloat(requestedAmount).toLocaleString()} USDC</span></div>
-            <div className="flex justify-between text-sm"><span>Platform Fee (1%)</span><span className="font-semibold">${calculatedFee} USDC</span></div>
-            <div className="border-t pt-2 flex justify-between text-sm font-semibold"><span>Fee Due on Acceptance</span><span>${calculatedFee} USDC</span></div>
+          <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-2">
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Requested Financing</span><span className="font-semibold tabular-nums">${parseFloat(requestedAmount).toLocaleString()} USDC</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Platform Fee (1%)</span><span className="font-semibold tabular-nums">${calculatedFee} USDC</span></div>
+            <div className="border-t border-white/10 pt-2 flex justify-between text-sm font-semibold"><span>Fee Due on Acceptance</span><span className="tabular-nums">${calculatedFee} USDC</span></div>
           </div>
         )}
 
-        <Button onClick={() => submitMutation.mutate()} disabled={!canSubmit || submitMutation.isPending} className="w-full">
+        <Button onClick={() => submitMutation.mutate()} disabled={!canSubmit || submitMutation.isPending} className="w-full rounded-xl h-11 font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
           {submitMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : <><Send className="h-4 w-4 mr-2" /> Submit Application</>}
         </Button>
       </CardContent>

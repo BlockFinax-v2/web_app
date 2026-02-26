@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useWallet } from "@/hooks/use-wallet";
 import { useToast } from "@/hooks/use-toast";
@@ -112,22 +112,24 @@ function FinancierRegistration({ address, onRegistered }: { address: string; onR
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
-      <Card className="max-w-lg w-full">
-        <CardHeader className="text-center">
-          <Landmark className="h-12 w-12 text-primary mx-auto mb-2" />
-          <CardTitle>Financier Registration</CardTitle>
-          <CardDescription>Set up your financier profile to start browsing and making offers</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Financier Name *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Afreximbank, TDB Capital" />
+    <div className="min-h-screen bg-background/80 flex items-center justify-center p-4">
+      <Card className="max-w-lg w-full rounded-2xl border border-white/10 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+        <CardHeader className="text-center pb-2">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 mx-auto mb-4">
+            <Landmark className="h-7 w-7 text-primary" />
           </div>
-          <div>
-            <Label>Institution Type *</Label>
+          <CardTitle className="text-xl font-semibold tracking-tight">Financier Registration</CardTitle>
+          <CardDescription className="mt-1.5">Set up your financier profile to start browsing and making offers</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5 px-8 pb-8">
+          <div className="space-y-1.5">
+            <Label className="text-muted-foreground">Financier Name *</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Afreximbank, TDB Capital" className="rounded-xl border-white/10 h-11" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-muted-foreground">Institution Type *</Label>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+              <SelectTrigger className="rounded-xl border-white/10 h-11"><SelectValue placeholder="Select type" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Bank">Bank</SelectItem>
                 <SelectItem value="Trade Finance Fund">Trade Finance Fund</SelectItem>
@@ -137,11 +139,11 @@ function FinancierRegistration({ address, onRegistered }: { address: string; onR
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Wallet Address</Label>
-            <Input value={address} disabled className="font-mono text-xs" />
+          <div className="space-y-1.5">
+            <Label className="text-muted-foreground">Wallet Address</Label>
+            <Input value={address} disabled className="font-mono text-xs rounded-xl border-white/10 h-11 bg-white/5" />
           </div>
-          <Button onClick={handleRegister} disabled={!name || !type} className="w-full">
+          <Button onClick={handleRegister} disabled={!name || !type} className="w-full rounded-xl h-11 font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
             <UserCheck className="h-4 w-4 mr-2" /> Complete Registration
           </Button>
         </CardContent>
@@ -249,14 +251,16 @@ export default function TreasuryPortal() {
 
   if (!wallet) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <Landmark className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Wallet Required</h2>
-            <p className="text-muted-foreground mb-4">Connect your wallet to access the Financier Console</p>
+      <div className="min-h-screen bg-background/80 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full rounded-2xl border border-white/10 bg-card/80 backdrop-blur-sm shadow-xl">
+          <CardContent className="pt-8 pb-8 text-center px-8">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 mx-auto mb-5">
+              <Landmark className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold tracking-tight mb-2">Wallet Required</h2>
+            <p className="text-muted-foreground text-sm mb-6">Connect your wallet to access the Treasury portal</p>
             <Link href="/wallet">
-              <Button><Wallet className="h-4 w-4 mr-2" /> Go to Wallet</Button>
+              <Button className="rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"><Wallet className="h-4 w-4 mr-2" /> Go to Wallet</Button>
             </Link>
           </CardContent>
         </Card>
@@ -288,48 +292,58 @@ export default function TreasuryPortal() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-background/80 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Link href="/wallet">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2">
-                <ArrowLeft className="h-4 w-4 mr-1" /> Back
+              <Button variant="ghost" size="icon" className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5">
+                <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div className="h-4 w-px bg-border" />
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-                <Landmark className="h-5 w-5 text-primary" /> Financier Console
-              </h1>
-              <p className="text-xs text-muted-foreground">Browse trade financing opportunities and submit competitive offers</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+                <Landmark className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">Treasury</h1>
+                <p className="text-xs text-muted-foreground mt-0.5">Browse opportunities and submit competitive offers</p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs font-medium border-primary/30">
               <Building2 className="h-3 w-3 mr-1" /> {profile.name}
             </Badge>
-            <Badge variant="secondary" className="text-xs">{profile.type}</Badge>
+            <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">{profile.type}</Badge>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           <StatCard icon={<FileText className="h-4 w-4 text-blue-500" />} label="Open Applications" value={openApps.length} />
           <StatCard icon={<Send className="h-4 w-4 text-amber-500" />} label="My Active Offers" value={activeOffers.length} />
           <StatCard icon={<CheckCircle className="h-4 w-4 text-green-500" />} label="Funded Deals" value={fundedDeals.length} />
           <StatCard icon={<DollarSign className="h-4 w-4 text-emerald-500" />} label="Total Deployed" value={`$${totalDeployed.toLocaleString()}`} sub="USDC" />
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="browse"><Search className="h-3.5 w-3.5 mr-1.5" />Browse</TabsTrigger>
-            <TabsTrigger value="offers"><HandCoins className="h-3.5 w-3.5 mr-1.5" />My Offers</TabsTrigger>
-            <TabsTrigger value="funded"><Briefcase className="h-3.5 w-3.5 mr-1.5" />Funded</TabsTrigger>
-            <TabsTrigger value="analytics"><BarChart3 className="h-3.5 w-3.5 mr-1.5" />Analytics</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="inline-flex h-12 rounded-2xl bg-card/60 border border-white/10 p-1.5 backdrop-blur-sm flex-wrap sm:flex-nowrap gap-1">
+            <TabsTrigger value="browse" className="rounded-xl px-4 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200">
+              <Search className="h-4 w-4 mr-2" /> Browse
+            </TabsTrigger>
+            <TabsTrigger value="offers" className="rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200">
+              <HandCoins className="h-4 w-4 mr-2" /> My Offers
+            </TabsTrigger>
+            <TabsTrigger value="funded" className="rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200">
+              <Briefcase className="h-4 w-4 mr-2" /> Funded
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200">
+              <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="browse">
+          <TabsContent value="browse" className="mt-6">
             {selectedApp ? (
               <ApplicationDetailView
                 app={selectedApp}
@@ -341,35 +355,37 @@ export default function TreasuryPortal() {
                 }}
               />
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-1">
+              <div className="space-y-5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative flex-1 min-w-[200px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search by company, trade description, or country..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 rounded-xl border-white/10 bg-card/50 h-11"
                     />
                   </div>
-                  <Badge variant="outline">{filteredApps.length} applications</Badge>
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1">{filteredApps.length} applications</Badge>
                 </div>
 
                 {appsLoading ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-16">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
                     <p className="text-muted-foreground mt-2">Loading applications...</p>
                   </div>
                 ) : filteredApps.length === 0 ? (
-                  <Card>
-                    <CardContent className="pt-6 text-center py-12">
-                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground">No open applications available</p>
+                  <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+                    <CardContent className="pt-8 text-center py-16">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 mx-auto mb-4">
+                        <FileText className="h-7 w-7 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground font-medium">No open applications available</p>
                       <p className="text-sm text-muted-foreground mt-1">Check back later for new trade financing opportunities</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-5 md:grid-cols-2">
                     {filteredApps.map((app: any) => (
                       <ApplicationCard
                         key={app.requestId || app.id}
@@ -404,18 +420,19 @@ export default function TreasuryPortal() {
       </div>
 
       <Dialog open={offerDialogOpen} onOpenChange={setOfferDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg rounded-2xl border border-white/10 bg-card">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CircleDollarSign className="h-5 w-5 text-primary" /> Make Financing Offer
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><CircleDollarSign className="h-5 w-5 text-primary" /></span>
+              Make Financing Offer
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="mt-1">
               Submit a competitive offer for {selectedApp?.buyerCompanyName || "this application"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {selectedApp && (
-              <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
+              <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm space-y-1.5">
                 <p><span className="text-muted-foreground">Type:</span> {FINANCING_TYPE_LABELS[selectedApp.financingType] || "Letter of Credit"}</p>
                 <p><span className="text-muted-foreground">Trade:</span> {selectedApp.tradeDescription?.substring(0, 80)}</p>
                 <p><span className="text-muted-foreground">Requested:</span> ${parseFloat(selectedApp.requestedAmount || "0").toLocaleString()} USDC</p>
@@ -423,33 +440,33 @@ export default function TreasuryPortal() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Offer Amount (USDC) *</Label>
-                <Input type="number" value={offerAmount} onChange={(e) => setOfferAmount(e.target.value)} placeholder="100,000" />
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Offer Amount (USDC) *</Label>
+                <Input type="number" value={offerAmount} onChange={(e) => setOfferAmount(e.target.value)} placeholder="100,000" className="rounded-xl border-white/10 h-11" />
               </div>
-              <div>
-                <Label>Interest Rate (%) *</Label>
-                <Input type="number" step="0.1" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} placeholder="8.5" />
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Interest Rate (%) *</Label>
+                <Input type="number" step="0.1" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} placeholder="8.5" className="rounded-xl border-white/10 h-11" />
               </div>
-              <div>
-                <Label>Tenor (days) *</Label>
-                <Input type="number" value={tenorDays} onChange={(e) => setTenorDays(e.target.value)} placeholder="90" />
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Tenor (days) *</Label>
+                <Input type="number" value={tenorDays} onChange={(e) => setTenorDays(e.target.value)} placeholder="90" className="rounded-xl border-white/10 h-11" />
               </div>
-              <div>
-                <Label>Fees (%)</Label>
-                <Input type="number" step="0.1" value={fees} onChange={(e) => setFees(e.target.value)} placeholder="1.0" />
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Fees (%)</Label>
+                <Input type="number" step="0.1" value={fees} onChange={(e) => setFees(e.target.value)} placeholder="1.0" className="rounded-xl border-white/10 h-11" />
               </div>
             </div>
-            <div>
-              <Label>Offer Expiry Date</Label>
-              <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground">Offer Expiry Date</Label>
+              <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="rounded-xl border-white/10 h-11" />
             </div>
-            <div>
-              <Label>Conditions & Notes</Label>
-              <Textarea value={conditions} onChange={(e) => setConditions(e.target.value)} placeholder="Any conditions, requirements, or notes for the applicant..." rows={3} />
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground">Conditions & Notes</Label>
+              <Textarea value={conditions} onChange={(e) => setConditions(e.target.value)} placeholder="Any conditions, requirements, or notes for the applicant..." rows={3} className="rounded-xl border-white/10 resize-none" />
             </div>
             {offerAmount && interestRate && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1 text-sm">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1.5 text-sm">
                 <div className="flex justify-between"><span>Offer Amount</span><span className="font-semibold">${parseFloat(offerAmount).toLocaleString()} USDC</span></div>
                 <div className="flex justify-between"><span>Interest ({interestRate}%)</span><span className="font-semibold">${(parseFloat(offerAmount) * parseFloat(interestRate) / 100 * (parseInt(tenorDays || "90") / 365)).toFixed(2)} USDC</span></div>
                 {fees && parseFloat(fees) > 0 && (
@@ -458,11 +475,12 @@ export default function TreasuryPortal() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setOfferDialogOpen(false); resetOfferForm(); }}>Cancel</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => { setOfferDialogOpen(false); resetOfferForm(); }} className="rounded-xl border-white/20">Cancel</Button>
             <Button
               onClick={() => submitOfferMutation.mutate()}
               disabled={!offerAmount || !interestRate || !tenorDays || submitOfferMutation.isPending}
+              className="rounded-xl shadow-lg shadow-primary/20"
             >
               {submitOfferMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : <><Send className="h-4 w-4 mr-2" /> Submit Offer</>}
             </Button>
@@ -473,67 +491,67 @@ export default function TreasuryPortal() {
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string | number; sub?: string }) {
+function StatCard({ icon, label, value, sub }: { icon: ReactNode; label: string; value: string | number; sub?: string }) {
   return (
-    <div className="bg-background rounded-lg border p-4">
-      <div className="flex items-center gap-2 mb-1">
-        {icon}
-        <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="group rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm shadow-lg shadow-black/5 transition-all duration-300 hover:border-primary/20 hover:shadow-primary/5 hover:-translate-y-0.5 p-5">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="rounded-lg bg-white/10 p-1.5 border border-white/5 shrink-0">{icon}</div>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
       </div>
-      <p className="text-xl font-semibold">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">{value}</p>
+      {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
     </div>
   );
 }
 
 function ApplicationCard({ app, onView, onMakeOffer }: { app: any; onView: () => void; onMakeOffer: () => void }) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="pt-4 space-y-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="font-semibold text-sm">{app.buyerCompanyName || "Trade Application"}</p>
+    <Card className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-primary/10 hover:-translate-y-0.5 overflow-hidden">
+      <CardContent className="pt-5 pb-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm tracking-tight">{app.buyerCompanyName || "Trade Application"}</p>
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{app.tradeDescription || "No description"}</p>
           </div>
-          <Badge variant="outline" className="shrink-0 ml-2 text-xs">
+          <Badge variant="outline" className="rounded-full shrink-0 text-xs border-emerald-500/30 text-emerald-400">
             {app.status === "seller_approved" ? "Verified" : "Open"}
           </Badge>
         </div>
 
-        <Badge variant="secondary" className="text-[10px] w-fit">{FINANCING_TYPE_LABELS[app.financingType] || "Letter of Credit"}</Badge>
+        <Badge variant="secondary" className="rounded-lg text-[10px] w-fit">{FINANCING_TYPE_LABELS[app.financingType] || "Letter of Credit"}</Badge>
 
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <DollarSign className="h-3 w-3" />
-            <span>Requested: <span className="font-medium text-foreground">${parseFloat(app.requestedAmount || "0").toLocaleString()}</span></span>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <DollarSign className="h-3.5 w-3.5 shrink-0" />
+            <span>Requested: <span className="font-medium text-foreground tabular-nums">${parseFloat(app.requestedAmount || "0").toLocaleString()}</span></span>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <TrendingUp className="h-3 w-3" />
-            <span>Trade Value: <span className="font-medium text-foreground">${parseFloat(app.tradeValue || "0").toLocaleString()}</span></span>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+            <span>Trade: <span className="font-medium text-foreground tabular-nums">${parseFloat(app.tradeValue || "0").toLocaleString()}</span></span>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Clock className="h-3 w-3" />
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
             <span>{app.requestedDuration || 90} days</span>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Globe className="h-3 w-3" />
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Globe className="h-3.5 w-3.5 shrink-0" />
             <span>{app.buyerCountry || "N/A"}</span>
           </div>
         </div>
 
         {app.sellerAddress && (
-          <div className="text-xs text-muted-foreground flex items-center gap-1">
-            <Package className="h-3 w-3" />
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <Package className="h-3 w-3 shrink-0" />
             Seller: {app.sellerAddress.substring(0, 10)}...{app.sellerAddress.slice(-6)}
           </div>
         )}
 
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1" onClick={onView}>
-            <Eye className="h-3.5 w-3.5 mr-1" /> View Details
+        <div className="flex gap-2 pt-1">
+          <Button variant="outline" size="sm" className="flex-1 rounded-xl border-white/20 hover:bg-white/5 h-9" onClick={onView}>
+            <Eye className="h-3.5 w-3.5 mr-1.5" /> View
           </Button>
-          <Button size="sm" className="flex-1" onClick={onMakeOffer}>
-            <CircleDollarSign className="h-3.5 w-3.5 mr-1" /> Make Offer
+          <Button size="sm" className="flex-1 rounded-xl h-9 shadow-lg shadow-primary/20" onClick={onMakeOffer}>
+            <CircleDollarSign className="h-3.5 w-3.5 mr-1.5" /> Make Offer
           </Button>
         </div>
       </CardContent>
@@ -578,28 +596,31 @@ function ApplicationDetailView({ app, onBack, onMakeOffer }: { app: any; onBack:
   };
 
   return (
-    <div className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back to Applications
+    <div className="space-y-5">
+      <Button variant="ghost" size="sm" onClick={onBack} className="rounded-xl text-muted-foreground hover:bg-white/5">
+        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Applications
       </Button>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" /> {app.buyerCompanyName || "Trade Application"}
-              </CardTitle>
-              <CardDescription className="mt-1">Application ID: {app.requestId || app.id}</CardDescription>
+      <Card className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold tracking-tight">{app.buyerCompanyName || "Trade Application"}</CardTitle>
+                <CardDescription className="mt-0.5">Application ID: {app.requestId || app.id}</CardDescription>
+              </div>
             </div>
-            <Button onClick={onMakeOffer}>
+            <Button onClick={onMakeOffer} className="rounded-xl shadow-lg shadow-primary/20">
               <CircleDollarSign className="h-4 w-4 mr-2" /> Make Offer
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-0">
           <div>
-            <h3 className="text-sm font-semibold mb-3">Buyer / Importer Details</h3>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">Buyer / Importer Details</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <InfoField label="Company" value={app.buyerCompanyName} />
               <InfoField label="Registration #" value={app.buyerRegistrationNumber} />
@@ -651,7 +672,7 @@ function ApplicationDetailView({ app, onBack, onMakeOffer }: { app: any; onBack:
             ) : (
               <div className="space-y-2">
                 {documents.map((doc: any) => (
-                  <div key={doc.id} className="flex items-center justify-between bg-muted rounded-lg p-3">
+                  <div key={doc.id} className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 p-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <FileText className="h-5 w-5 text-blue-500 shrink-0" />
                       <div className="min-w-0">
@@ -668,9 +689,9 @@ function ApplicationDetailView({ app, onBack, onMakeOffer }: { app: any; onBack:
             )}
           </div>
 
-          <div className="bg-muted rounded-lg p-4">
+          <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
             <div className="flex items-center gap-2 text-sm font-medium mb-2">
-              <AlertCircle className="h-4 w-4 text-blue-500" />
+              <AlertCircle className="h-4 w-4 text-primary" />
               Financing Summary
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm">
@@ -719,10 +740,12 @@ function MyOffersTab({ offers, isLoading, onWithdraw, withdrawPending }: { offer
 
   if (offers.length === 0) {
     return (
-      <Card>
-        <CardContent className="pt-6 text-center py-12">
-          <HandCoins className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No offers submitted yet</p>
+      <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+        <CardContent className="pt-8 text-center py-16">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 mx-auto mb-4">
+            <HandCoins className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground font-medium">No offers submitted yet</p>
           <p className="text-sm text-muted-foreground mt-1">Browse applications and submit competitive offers</p>
         </CardContent>
       </Card>
@@ -730,10 +753,10 @@ function MyOffersTab({ offers, isLoading, onWithdraw, withdrawPending }: { offer
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {offers.map((offer: any) => (
-        <Card key={offer.id}>
-          <CardContent className="pt-4">
+        <Card key={offer.id} className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+          <CardContent className="pt-5 pb-5">
             <div className="flex items-start justify-between">
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
@@ -774,7 +797,7 @@ function MyOffersTab({ offers, isLoading, onWithdraw, withdrawPending }: { offer
                   size="sm"
                   onClick={() => onWithdraw(offer.id)}
                   disabled={withdrawPending}
-                  className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                  className="rounded-xl text-red-500 hover:text-red-400 border-red-500/30 hover:border-red-500/50"
                 >
                   {withdrawPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5 mr-1" />}
                   Withdraw
@@ -791,17 +814,21 @@ function MyOffersTab({ offers, isLoading, onWithdraw, withdrawPending }: { offer
 function FundedDealsTab({ deals }: { deals: any[] }) {
   if (deals.length === 0) {
     return (
-      <Card><CardContent className="pt-6 text-center py-12">
-        <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-muted-foreground">No funded deals yet</p>
-        <p className="text-sm text-muted-foreground mt-1">Accepted offers will appear here</p>
-      </CardContent></Card>
+      <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+        <CardContent className="pt-8 text-center py-16">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 mx-auto mb-4">
+            <Briefcase className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground font-medium">No funded deals yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Accepted offers will appear here</p>
+        </CardContent>
+      </Card>
     );
   }
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {deals.map((deal: any) => (
-        <Card key={deal.id}><CardContent className="pt-4">
+        <Card key={deal.id} className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden"><CardContent className="pt-5 pb-5">
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="font-semibold text-sm">Deal #{deal.id} - {deal.requestId}</p>
@@ -836,16 +863,17 @@ function AnalyticsTab({ applications, offers }: { applications: any[]; offers: a
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground mb-1">Total Applications</p><p className="text-2xl font-bold">{totalApps}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground mb-1">Total Funded</p><p className="text-2xl font-bold text-green-600">{funded}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground mb-1">Avg Deal Size</p><p className="text-2xl font-bold">${avgDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-3"><p className="text-xs text-muted-foreground mb-1">Platform Volume</p><p className="text-2xl font-bold">${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p><p className="text-xs text-muted-foreground">USDC</p></CardContent></Card>
+        <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden"><CardContent className="pt-5 pb-4"><p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Total Applications</p><p className="text-2xl font-bold tracking-tight tabular-nums">{totalApps}</p></CardContent></Card>
+        <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden"><CardContent className="pt-5 pb-4"><p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Total Funded</p><p className="text-2xl font-bold tracking-tight text-emerald-400 tabular-nums">{funded}</p></CardContent></Card>
+        <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden"><CardContent className="pt-5 pb-4"><p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Avg Deal Size</p><p className="text-2xl font-bold tracking-tight tabular-nums">${avgDealSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></CardContent></Card>
+        <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden"><CardContent className="pt-5 pb-4"><p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Platform Volume</p><p className="text-2xl font-bold tracking-tight tabular-nums">${totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p><p className="text-xs text-muted-foreground">USDC</p></CardContent></Card>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" /> Platform Overview
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10"><BarChart3 className="h-4 w-4 text-primary" /></span>
+            Platform Overview
           </CardTitle>
         </CardHeader>
         <CardContent>

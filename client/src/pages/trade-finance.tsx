@@ -18,7 +18,8 @@ import {
   Send,
   FileText,
   Star,
-  Wallet
+  Wallet,
+  Briefcase
 } from "lucide-react";
 import {
   Select,
@@ -79,14 +80,16 @@ export default function TradeFinancePage() {
 
   if (!wallet) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <Handshake className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Wallet Required</h2>
-            <p className="text-muted-foreground mb-4">Connect your wallet to access Trade Finance</p>
+      <div className="min-h-screen bg-background/80 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full rounded-2xl border border-white/10 bg-card/80 backdrop-blur-sm shadow-xl">
+          <CardContent className="pt-8 pb-8 text-center px-8">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 mx-auto mb-5">
+              <Handshake className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold tracking-tight mb-2">Wallet Required</h2>
+            <p className="text-muted-foreground text-sm mb-6">Connect your wallet to access Trade Finance</p>
             <Link href="/wallet">
-              <Button><Wallet className="h-4 w-4 mr-2" /> Go to Wallet</Button>
+              <Button className="rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"><Wallet className="h-4 w-4 mr-2" /> Go to Wallet</Button>
             </Link>
           </CardContent>
         </Card>
@@ -101,18 +104,25 @@ export default function TradeFinancePage() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => setLocation("/wallet")} className="text-muted-foreground hover:text-foreground -ml-2">
-              <TrendingUpIcon className="h-4 w-4 mr-1" /> Back
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-background/80 backdrop-blur-xl">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setLocation("/wallet")} className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5">
+              <TrendingUpIcon className="h-5 w-5" />
             </Button>
-            <div className="h-4 w-px bg-border" />
-            <h1 className="text-lg font-semibold tracking-tight">Trade Finance</h1>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">Trade Finance</h1>
+                <p className="text-xs text-muted-foreground mt-0.5">Apply for financing and receive competitive offers</p>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Select value={userRole} onValueChange={(v: "buyer" | "seller") => setUserRole(v)}>
-              <SelectTrigger className="w-[130px] h-8 text-xs">
+              <SelectTrigger className="w-[160px] h-10 rounded-xl border-white/10 bg-card/60 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -120,13 +130,13 @@ export default function TradeFinancePage() {
                 <SelectItem value="seller">Seller / Exporter</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="outline" className="text-xs font-normal">Matchmaking</Badge>
+            <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs font-medium border-primary/30 text-primary">Matchmaking</Badge>
           </div>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           <StatsCard icon={<FileTextIcon className="h-4 w-4 text-blue-500" />} label="Active Applications" value={activeApps.length} />
           <StatsCard icon={<Users className="h-4 w-4 text-amber-500" />} label="Offers Received" value={offersCount} />
           <StatsCard icon={<CheckCircleIcon className="h-4 w-4 text-green-500" />} label="Funded Trades" value={fundedCount} />
@@ -134,22 +144,30 @@ export default function TradeFinancePage() {
         </div>
 
         {userRole === "seller" ? (
-          <Tabs defaultValue="seller" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-1">
-              <TabsTrigger value="seller"><Package className="h-3.5 w-3.5 mr-1.5" />Seller Dashboard</TabsTrigger>
+          <Tabs defaultValue="seller" className="space-y-6">
+            <TabsList className="inline-flex h-12 rounded-2xl bg-card/60 border border-white/10 p-1.5 backdrop-blur-sm w-full sm:w-auto">
+              <TabsTrigger value="seller" className="rounded-xl px-5 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200 flex-1 sm:flex-initial">
+                <Package className="h-4 w-4 mr-2" /> Seller Dashboard
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="seller">
+            <TabsContent value="seller" className="mt-6">
               <SellerDashboardTab applications={sellerApps} isLoading={sellerLoading} walletAddress={address!} />
             </TabsContent>
           </Tabs>
         ) : (
-          <Tabs defaultValue="apply" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="apply"><Send className="h-3.5 w-3.5 mr-1.5" />Apply</TabsTrigger>
-              <TabsTrigger value="applications"><FileText className="h-3.5 w-3.5 mr-1.5" />My Apps</TabsTrigger>
-              <TabsTrigger value="offers"><Star className="h-3.5 w-3.5 mr-1.5" />Offers</TabsTrigger>
+          <Tabs defaultValue="apply" className="space-y-6">
+            <TabsList className="inline-flex h-12 rounded-2xl bg-card/60 border border-white/10 p-1.5 backdrop-blur-sm">
+              <TabsTrigger value="apply" className="rounded-xl px-5 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200">
+                <Send className="h-4 w-4 mr-2" /> Apply
+              </TabsTrigger>
+              <TabsTrigger value="applications" className="rounded-xl px-5 py-2.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200">
+                <FileText className="h-4 w-4 mr-2" /> My Apps
+              </TabsTrigger>
+              <TabsTrigger value="offers" className="rounded-xl px-5 py-2.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 transition-all duration-200">
+                <Star className="h-4 w-4 mr-2" /> Offers
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="apply">
+            <TabsContent value="apply" className="mt-6">
               <ApplicationForm walletAddress={address!} />
             </TabsContent>
             <TabsContent value="applications">
@@ -160,7 +178,7 @@ export default function TradeFinancePage() {
             </TabsContent>
           </Tabs>
         )}
-    </div>
+      </div>
     </>
   );
 }

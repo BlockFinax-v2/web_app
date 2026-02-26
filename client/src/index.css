@@ -205,6 +205,14 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
   }
+
+  /* Hedge / FX page: subtle glow and glass */
+  .hedge-card-glow {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.08), 0 4px 24px -4px hsl(var(--primary) / 0.12);
+  }
+  .hedge-card-glow:hover {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 8px 32px -8px hsl(var(--primary) / 0.18);
+  }
 }
 
 /* Mobile chat optimizations */
