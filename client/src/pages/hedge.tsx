@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/api-client";
 import { useWallet } from "@/hooks/use-wallet";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +18,8 @@ import {
   Activity,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useTransactionSigner } from "@/contexts/TransactionSignerContext";
+import { hedgeService, getHedgeDiamondAddress } from "@/services/hedgeService";
 
 // Modular Components
 import { HedgerTab } from "@/components/hedge/HedgerTab";
@@ -27,63 +31,13 @@ import { CreateEventDialog } from "@/components/hedge/dialogs/CreateEventDialog"
 import { SettleEventDialog } from "@/components/hedge/dialogs/SettleEventDialog";
 import {
   EventWithStats,
-  FXData,
   NewEventState,
+  HedgePosition,
+  HedgeLpDeposit,
 } from "@/components/hedge/types";
 
-// ---- Dummy types (formerly from @shared/schema) ----
-type HedgePosition = {
-  id: number;
-  status: string;
-  notional: string;
-  eventId: number;
-};
-type HedgeLpDeposit = {
-  id: number;
-  amount: string;
-  withdrawn: boolean;
-  premiumsEarned?: string;
-  eventId: number;
-};
-
-// ---- Dummy data ----
-const DUMMY_EVENTS: EventWithStats[] = [
-  {
-    id: 1,
-    name: "USD/GHS Q1 Protection",
-    status: "open",
-    premiumRate: "0.05",
-    payoutRate: "0.80",
-    underlying: "USD/GHS",
-    strike: "12.50",
-    expiryDate: new Date(Date.now() + 30 * 86400000).toISOString(),
-    totalNotional: 250000,
-    totalDeposited: 120000,
-  } as any,
-  {
-    id: 2,
-    name: "USD/NGN Q1 Protection",
-    status: "open",
-    premiumRate: "0.04",
-    payoutRate: "0.75",
-    underlying: "USD/NGN",
-    strike: "1600",
-    expiryDate: new Date(Date.now() + 45 * 86400000).toISOString(),
-    totalNotional: 180000,
-    totalDeposited: 90000,
-  } as any,
-];
-const DUMMY_FX: FXData = {
-  rates: {
-    "USD/GHS": { pair: "USD/GHS", rate: 12.48, source: "Oracle" } as any,
-    "USD/NGN": { pair: "USD/NGN", rate: 1598.5, source: "Oracle" } as any,
-  },
-  pairs: ["USD/GHS", "USD/NGN"],
-};
-// ---- End dummy data ----
-
 export default function Hedge() {
-  const { wallet } = useWallet();
+  const { wallet, address, settings } = useWallet();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("hedger");
   const [selectedEvent, setSelectedEvent] = useState<EventWithStats | null>(
@@ -106,76 +60,268 @@ export default function Hedge() {
     payoutRate: "",
     safetyFactor: "0.80",
     expiryDays: "30",
+    initialLiquidity: "100",
   });
 
-  const events: EventWithStats[] = DUMMY_EVENTS;
-  const eventsLoading = false;
-  const myPositions: HedgePosition[] = [];
-  const treasuryAddress = { address: "0xTreasury...Demo" };
-  const fxData: FXData = DUMMY_FX;
-  const myDeposits: HedgeLpDeposit[] = [];
+  const { requestSignature } = useTransactionSigner();
+  const chainId = settings?.selectedNetworkId || 4202;
+
+  // ------- Queries (on-chain reads) -------
+
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+  } = useQuery<EventWithStats[]>({
+    queryKey: ["hedge-events", chainId],
+    queryFn: () => hedgeService.getAllEvents(chainId),
+    enabled: !!wallet,
+  });
+
+  const {
+    data: myPositions = [],
+    isLoading: positionsLoading,
+  } = useQuery<HedgePosition[]>({
+    queryKey: ["hedge-positions", chainId, address],
+    queryFn: () => (address ? hedgeService.getUserPositions(chainId, address) : Promise.resolve([])),
+    enabled: !!wallet && !!address,
+  });
+
+  const {
+    data: myDeposits = [],
+    isLoading: depositsLoading,
+  } = useQuery<HedgeLpDeposit[]>({
+    queryKey: ["hedge-deposits", chainId, address],
+    queryFn: () => (address ? hedgeService.getUserLpDeposits(chainId, address) : Promise.resolve([])),
+    enabled: !!wallet && !!address,
+  });
+
+  const treasuryAddress = wallet
+    ? { address: getHedgeDiamondAddress(chainId) }
+    : undefined;
 
   const fetchEventDetails = (id: number) => {
-    const event = DUMMY_EVENTS.find((e) => e.id === id) || null;
+    const event = events.find((e) => e.id === id) || null;
     setSelectedEvent(event);
     return Promise.resolve(event);
   };
 
-  const makeDummyMutation = (
-    title: string,
-    description: string,
-    cleanup?: () => void,
-  ) => ({
-    mutate: () => {
-      setTimeout(() => {
-        toast({ title, description });
-        cleanup?.();
-      }, 800);
-    },
-    isPending: false,
-  });
+  // ------- Mutations (AA + EOA via TransactionSignerContext) -------
 
-  const buyProtectionMutation = makeDummyMutation(
-    "Protection Purchased (Demo)",
-    `Notional: $${parseFloat(notional || "0").toLocaleString()}`,
-    () => {
+  const buyProtectionMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedEvent || !notional || parseFloat(notional) < 10) {
+        throw new Error("Enter a notional of at least $10");
+      }
+      return requestSignature({
+        title: "Buy FX Protection",
+        description: `Buying protection on ${selectedEvent.underlying} (Event #${selectedEvent.id})`,
+        amountUSD: parseFloat(notional),
+        execute: async (privateKey) =>
+          hedgeService.buyProtection(privateKey, chainId, {
+            eventId: selectedEvent.id,
+            notional,
+          }),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Protection Purchased", description: "Your hedge position has been created on-chain." });
       setBuyDialogOpen(false);
       setNotional("");
+      queryClient.invalidateQueries({ queryKey: ["hedge-positions", chainId, address] });
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
     },
-  );
-  const depositMutation = makeDummyMutation(
-    "Liquidity Deposited (Demo)",
-    `$${parseFloat(depositAmount || "0").toLocaleString()} USDC`,
-    () => {
+    onError: (err: any) => {
+      toast({
+        title: "Purchase Failed",
+        description: err?.message || "Unable to buy protection",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const depositMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedEvent || !depositAmount || parseFloat(depositAmount) < 10) {
+        throw new Error("Enter a deposit of at least $10");
+      }
+      return requestSignature({
+        title: "Deposit Liquidity",
+        description: `Depositing $${parseFloat(depositAmount).toLocaleString()} into Event #${selectedEvent.id}`,
+        amountUSD: parseFloat(depositAmount),
+        execute: async (privateKey) =>
+          hedgeService.depositLiquidity(privateKey, chainId, {
+            eventId: selectedEvent.id,
+            amount: depositAmount,
+          }),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Liquidity Deposited", description: "Your LP position has been created on-chain." });
       setDepositDialogOpen(false);
       setDepositAmount("");
+      queryClient.invalidateQueries({ queryKey: ["hedge-deposits", chainId, address] });
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
     },
-  );
-  const createEventMutation = makeDummyMutation(
-    "Event Created (Demo)",
-    "New hedge event simulated",
-    () => setCreateEventDialogOpen(false),
-  );
-  const settleMutation = makeDummyMutation(
-    "Event Settled (Demo)",
-    "Settlement simulated",
-    () => {
+    onError: (err: any) => {
+      toast({
+        title: "Deposit Failed",
+        description: err?.message || "Unable to deposit liquidity",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createEventMutation = useMutation({
+    mutationFn: async () => {
+      if (!newEvent.name || !newEvent.strike || !newEvent.premiumRate || !newEvent.payoutRate || !newEvent.initialLiquidity) {
+        throw new Error("Please fill all required event fields");
+      }
+      const initialLiquidity = parseFloat(newEvent.initialLiquidity);
+      if (!initialLiquidity || initialLiquidity < 10) {
+        throw new Error("Initial liquidity must be at least $10");
+      }
+      return requestSignature({
+        title: "Create Hedge Event",
+        description: `Creating ${newEvent.underlying} hedge event "${newEvent.name}"`,
+        amountUSD: initialLiquidity,
+        execute: async (privateKey) =>
+          hedgeService.createHedgeEvent(privateKey, chainId, {
+            name: newEvent.name,
+            underlying: newEvent.underlying,
+            strike: newEvent.strike,
+            premiumRate: newEvent.premiumRate,
+            payoutRate: newEvent.payoutRate,
+            expiryDays: newEvent.expiryDays,
+            initialLiquidity: newEvent.initialLiquidity!,
+            poolOpen: true,
+            allowExternalLp: true,
+          }),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Event Created", description: "Your hedge event is now live on-chain." });
+      setCreateEventDialogOpen(false);
+      setNewEvent((prev) => ({
+        ...prev,
+        name: "",
+        description: "",
+        strike: "",
+        premiumRate: "",
+        payoutRate: "",
+        expiryDays: "30",
+        initialLiquidity: "100",
+      }));
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Event Creation Failed",
+        description: err?.message || "Unable to create hedge event",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const settleMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedEvent || !settlementPrice) {
+        throw new Error("Enter a settlement price");
+      }
+      return requestSignature({
+        title: "Settle Hedge Event",
+        description: `Settling Event #${selectedEvent.id} at FX rate ${settlementPrice}`,
+        amountUSD: undefined,
+        execute: async (privateKey) =>
+          hedgeService.settleEvent(privateKey, chainId, {
+            eventId: selectedEvent.id,
+            settlementPrice,
+          }),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Event Settled", description: "The hedge event has been settled on-chain." });
       setSettleDialogOpen(false);
       setSettlementPrice("");
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
+      queryClient.invalidateQueries({ queryKey: ["hedge-positions", chainId, address] });
     },
-  );
-  const claimMutation = {
-    mutate: (_id: number) => toast({ title: "Payout Claimed (Demo)" }),
-    isPending: false,
-  };
-  const withdrawMutation = {
-    mutate: (_id: number) => toast({ title: "Liquidity Withdrawn (Demo)" }),
-    isPending: false,
-  };
-  const claimPremiumsMutation = {
-    mutate: (_id: number) => toast({ title: "Premiums Claimed (Demo)" }),
-    isPending: false,
-  };
+    onError: (err: any) => {
+      toast({
+        title: "Settlement Failed",
+        description: err?.message || "Unable to settle hedge event",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const claimMutation = useMutation({
+    mutationFn: async (positionId: number) => {
+      return requestSignature({
+        title: "Claim Hedge Payout",
+        description: `Claiming payout for position #${positionId}`,
+        execute: async (privateKey) =>
+          hedgeService.claimPayout(privateKey, chainId, positionId),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Payout Claimed", description: "Your hedge payout has been claimed." });
+      queryClient.invalidateQueries({ queryKey: ["hedge-positions", chainId, address] });
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Claim Failed",
+        description: err?.message || "Unable to claim payout",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: async (depositId: number) => {
+      return requestSignature({
+        title: "Withdraw Liquidity",
+        description: `Withdrawing liquidity for deposit #${depositId}`,
+        execute: async (privateKey) =>
+          hedgeService.withdrawCapital(privateKey, chainId, depositId),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Liquidity Withdrawn", description: "Your capital has been returned." });
+      queryClient.invalidateQueries({ queryKey: ["hedge-deposits", chainId, address] });
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Withdrawal Failed",
+        description: err?.message || "Unable to withdraw liquidity",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const claimPremiumsMutation = useMutation({
+    mutationFn: async (depositId: number) => {
+      return requestSignature({
+        title: "Claim Premiums",
+        description: `Claiming premiums for deposit #${depositId}`,
+        execute: async (privateKey) =>
+          hedgeService.claimPremiums(privateKey, chainId, depositId),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Premiums Claimed", description: "Your LP premiums have been claimed." });
+      queryClient.invalidateQueries({ queryKey: ["hedge-deposits", chainId, address] });
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Claim Failed",
+        description: err?.message || "Unable to claim premiums",
+        variant: "destructive",
+      });
+    },
+  });
 
   if (!wallet) {
     return (
@@ -312,41 +458,6 @@ export default function Hedge() {
           </Card>
         </div>
 
-        {/* Live FX Oracle: gradient border, live pill, tabular rates */}
-        {fxData && Object.keys(fxData.rates).length > 0 && (
-          <Card className="rounded-2xl border border-white/10 bg-card/50 backdrop-blur-sm mb-8 overflow-hidden ring-1 ring-primary/10">
-            <CardContent className="pt-5 pb-4 px-5 sm:px-6">
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live
-                </span>
-                <span className="text-sm font-semibold tracking-tight text-foreground">
-                  FX Oracle
-                </span>
-                <span className="text-xs text-muted-foreground/80 ml-auto">
-                  Source: {Object.values(fxData.rates)[0]?.source}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                {Object.values(fxData.rates).map((r) => (
-                  <div
-                    key={r.pair}
-                    className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 min-w-[140px]"
-                  >
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {r.pair}
-                    </span>
-                    <span className="text-lg font-bold tracking-tight text-foreground tabular-nums">
-                      {r.rate.toFixed(4)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Tabs: pill style, gradient active state */}
         <Tabs
           value={activeTab}
@@ -378,7 +489,6 @@ export default function Hedge() {
             <HedgerTab
               events={events}
               isLoading={eventsLoading}
-              fxData={fxData}
               walletAddress={wallet.address || ""}
               onBuyProtection={(e) => {
                 fetchEventDetails(e.id);
@@ -453,7 +563,6 @@ export default function Hedge() {
         onSettlementPriceChange={setSettlementPrice}
         onSettle={() => settleMutation.mutate()}
         isPending={settleMutation.isPending}
-        fxData={fxData}
       />
     </>
   );

@@ -38,7 +38,7 @@ import SpecialistDiscovery from "@/pages/specialist-registry";
 import Contracts from "@/pages/contracts";
 import Marketplace from "@/pages/marketplace";
 import Hedge from "@/pages/hedge";
-
+import RatesPage from "@/pages/rates";
 
 // Rewards & admin
 import Referrals from "@/pages/rewards-referrals";
@@ -103,6 +103,7 @@ function Router() {
 
       {/* Trade & finance */}
       <AuthenticatedRoute path="/trade-finance" component={TradeFinance} />
+      <AuthenticatedRoute path="/rates" component={RatesPage} />
       <AuthenticatedRoute path="/treasury" component={TreasuryPortal} />
       <AuthenticatedRoute path="/treasury/specialists" component={SpecialistDiscovery} />
       <AuthenticatedRoute path="/contracts" component={Contracts} />

@@ -112,6 +112,22 @@ export function CreateEventDialog({
             </div>
           </div>
 
+          <div>
+            <Label className="text-muted-foreground">Initial Liquidity (USDC)</Label>
+            <Input
+              type="number"
+              min="10"
+              step="1"
+              value={newEvent.initialLiquidity || ""}
+              onChange={e => onNewEventChange({ initialLiquidity: e.target.value })}
+              placeholder="e.g. 100"
+              className="bg-muted border-border text-foreground mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Minimum $10. This is the creator&apos;s first LP deposit into the pool.
+            </p>
+          </div>
+
           {newEvent.strike && newEvent.premiumRate && newEvent.payoutRate && (
             <div className="bg-muted/50 rounded-lg p-3 space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Example: $10,000 hedge</p>
@@ -129,7 +145,14 @@ export function CreateEventDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} className="border-border text-muted-foreground">Cancel</Button>
           <Button 
             onClick={onCreate}
-            disabled={!newEvent.name || !newEvent.strike || !newEvent.premiumRate || !newEvent.payoutRate || isPending}
+            disabled={
+              !newEvent.name ||
+              !newEvent.strike ||
+              !newEvent.premiumRate ||
+              !newEvent.payoutRate ||
+              !newEvent.initialLiquidity ||
+              isPending
+            }
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {isPending ? "Creating..." : "Create Event"}

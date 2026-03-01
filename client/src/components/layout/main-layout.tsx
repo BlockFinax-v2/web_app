@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
-  Landmark
+  Landmark,
+  LineChart
 } from "lucide-react";
 import { useTheme } from "@/components/ui/theme-provider";
 import { useWallet } from "@/hooks/use-wallet";
@@ -33,6 +34,7 @@ interface MainLayoutProps {
 const NAV_ITEMS = [
   { href: "/wallet", label: "Wallet", icon: Wallet },
   { href: "/trade-finance", label: "Trade Finance", icon: Briefcase },
+  { href: "/rates", label: "Rates", icon: LineChart },
   { href: "/hedge", label: "FX Hedge", icon: ShieldAlert },
   { href: "/treasury", label: "Treasury", icon: Landmark },
 ];
