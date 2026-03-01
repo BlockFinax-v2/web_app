@@ -20,6 +20,7 @@ import {
 import { Link } from "wouter";
 import { useTransactionSigner } from "@/contexts/TransactionSignerContext";
 import { hedgeService, getHedgeDiamondAddress } from "@/services/hedgeService";
+import { sendRequestFxRate, isChainlinkFxSupported } from "@/services/chainlinkFxService";
 
 // Modular Components
 import { HedgerTab } from "@/components/hedge/HedgerTab";
@@ -323,6 +324,44 @@ export default function Hedge() {
     },
   });
 
+  const chainlinkRequestMutation = useMutation({
+    mutationFn: async ({
+      eventId,
+      currencyCode,
+      requestDataHex,
+    }: {
+      eventId: number;
+      currencyCode: string;
+      requestDataHex: string;
+    }) => {
+      return requestSignature({
+        title: "Request Chainlink FX Rate",
+        description: `Request on-chain rate for ${currencyCode} and settle event #${eventId}`,
+        execute: async (privateKey) =>
+          sendRequestFxRate(privateKey, chainId, {
+            eventId,
+            currencyCode,
+            requestDataHex,
+          }),
+      });
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: "Request sent",
+        description: "Event will settle when Chainlink DON fulfills the request.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["hedge-events", chainId] });
+      queryClient.invalidateQueries({ queryKey: ["chainlink-last-rate", chainId, variables.currencyCode] });
+    },
+    onError: (err: unknown) => {
+      toast({
+        title: "Chainlink request failed",
+        description: err instanceof Error ? err.message : "Unable to send request",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!wallet) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
@@ -563,6 +602,14 @@ export default function Hedge() {
         onSettlementPriceChange={setSettlementPrice}
         onSettle={() => settleMutation.mutate()}
         isPending={settleMutation.isPending}
+        chainId={chainId}
+        onRequestChainlinkRate={
+          isChainlinkFxSupported(chainId)
+            ? (eventId, currencyCode, requestDataHex) =>
+                chainlinkRequestMutation.mutate({ eventId, currencyCode, requestDataHex })
+            : undefined
+        }
+        isChainlinkRequestPending={chainlinkRequestMutation.isPending}
       />
     </>
   );

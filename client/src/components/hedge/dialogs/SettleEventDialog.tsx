@@ -1,9 +1,12 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, Activity } from "lucide-react";
-import { EventWithStats, FXData } from "../types";
+import { RefreshCw, Link2 } from "lucide-react";
+import { EventWithStats } from "../types";
+import { getLastFulfilledRate, isChainlinkFxSupported } from "@/services/chainlinkFxService";
 
 interface SettleEventDialogProps {
   open: boolean;
@@ -13,19 +16,49 @@ interface SettleEventDialogProps {
   onSettlementPriceChange: (value: string) => void;
   onSettle: () => void;
   isPending: boolean;
-  fxData?: FXData;
+  chainId?: number;
+  onRequestChainlinkRate?: (eventId: number, currencyCode: string, requestDataHex: string) => Promise<void>;
+  isChainlinkRequestPending?: boolean;
 }
 
-export function SettleEventDialog({ 
-  open, 
-  onOpenChange, 
-  selectedEvent, 
-  settlementPrice, 
-  onSettlementPriceChange, 
-  onSettle, 
+/** Extract quote currency from underlying e.g. "USD/GHS" -> "GHS" */
+function quoteCurrency(underlying: string): string {
+  const parts = underlying.split("/");
+  return parts.length >= 2 ? parts[1]! : underlying;
+}
+
+export function SettleEventDialog({
+  open,
+  onOpenChange,
+  selectedEvent,
+  settlementPrice,
+  onSettlementPriceChange,
+  onSettle,
   isPending,
-  fxData
+  chainId = 0,
+  onRequestChainlinkRate,
+  isChainlinkRequestPending = false,
 }: SettleEventDialogProps) {
+  const [chainlinkRequestDataHex, setChainlinkRequestDataHex] = useState("");
+  const currencyCode = selectedEvent ? quoteCurrency(selectedEvent.underlying) : "";
+  const chainlinkSupported = !!chainId && isChainlinkFxSupported(chainId);
+
+  const { data: lastChainlinkRate } = useQuery({
+    queryKey: ["chainlink-last-rate", chainId, currencyCode],
+    queryFn: () => getLastFulfilledRate(chainId!, currencyCode),
+    enabled: open && !!chainId && !!currencyCode && chainlinkSupported,
+  });
+
+  const handleUseLastChainlinkRate = () => {
+    if (lastChainlinkRate) onSettlementPriceChange(lastChainlinkRate);
+  };
+
+  const handleSubmitChainlinkRequest = () => {
+    if (!selectedEvent || !chainlinkRequestDataHex.trim() || !onRequestChainlinkRate) return;
+    onRequestChainlinkRate(selectedEvent.id, currencyCode, chainlinkRequestDataHex.trim());
+    setChainlinkRequestDataHex("");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border text-foreground sm:max-w-[450px]">
@@ -49,23 +82,50 @@ export function SettleEventDialog({
             </div>
             <div>
               <Label className="text-muted-foreground">Settlement FX Rate</Label>
-              <Input 
-                type="number" step="0.01" value={settlementPrice}
-                onChange={e => onSettlementPriceChange(e.target.value)}
+              <Input
+                type="number"
+                step="0.01"
+                value={settlementPrice}
+                onChange={(e) => onSettlementPriceChange(e.target.value)}
                 placeholder={`Current ${selectedEvent.underlying} rate`}
-                className="bg-muted border-border text-foreground mt-1" 
+                className="bg-muted border-border text-foreground mt-1"
               />
-              {fxData?.rates[selectedEvent.underlying] && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+              {chainlinkSupported && lastChainlinkRate && parseFloat(lastChainlinkRate) > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="mt-2 border-primary/30 text-primary text-xs"
-                  onClick={() => onSettlementPriceChange(fxData.rates[selectedEvent.underlying!].rate.toFixed(4))}
+                  onClick={handleUseLastChainlinkRate}
                 >
-                  <Activity className="h-3 w-3 mr-1" /> Use Live Oracle Rate: {fxData.rates[selectedEvent.underlying].rate.toFixed(4)}
+                  <Link2 className="h-3 w-3 mr-1" /> Use last Chainlink rate: {lastChainlinkRate}
                 </Button>
               )}
             </div>
+            {chainlinkSupported && onRequestChainlinkRate && (
+              <div className="rounded-lg border border-white/10 bg-muted/30 p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Link2 className="h-3 w-3" /> Request rate via Chainlink & settle
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Paste request data (hex) from the request script, then submit. Event will settle when the DON fulfills.
+                </p>
+                <Input
+                  placeholder="0x... (request data hex)"
+                  value={chainlinkRequestDataHex}
+                  onChange={(e) => setChainlinkRequestDataHex(e.target.value)}
+                  className="bg-background border-border text-foreground font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-primary/30 text-primary"
+                  onClick={handleSubmitChainlinkRequest}
+                  disabled={!chainlinkRequestDataHex.trim() || isChainlinkRequestPending}
+                >
+                  {isChainlinkRequestPending ? "Submitting..." : "Submit request"}
+                </Button>
+              </div>
+            )}
             {settlementPrice && (
               <div className={`rounded-lg p-3 ${parseFloat(settlementPrice) >= parseFloat(selectedEvent.strike) ? "bg-red-500/10 border border-red-500/30" : "bg-green-500/10 border border-green-500/30"}`}>
                 <p className="text-sm font-medium">
