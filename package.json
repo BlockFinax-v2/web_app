@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "tsc"
+    "check": "tsc",
+    "fx:build-request": "node functions/build-fx-request.cjs"
   },
   "dependencies": {
     "@aa-sdk/core": "^4.84.1",
     "@account-kit/infra": "^4.84.1",
     "@account-kit/smart-contracts": "^4.84.1",
+    "@chainlink/functions-toolkit": "^0.2.6",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
@@ -46,8 +48,10 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.6.1",
     "embla-carousel-react": "^8.6.0",
     "ethers": "^6.16.0",
+    "ethers5": "npm:ethers@5.7.2",
     "framer-motion": "^11.13.1",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
